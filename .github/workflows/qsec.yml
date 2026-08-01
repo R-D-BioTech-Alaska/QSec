@@ -23,10 +23,14 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e .
+      - run: python tools/build_native_core.py --output build/qsec-law-core
       - run: python -m compileall -q qsec tests tools
       - run: python -m unittest discover -s tests -v
+        env:
+          QSEC_NATIVE_CORE: ${{ github.workspace }}/build/qsec-law-core
       - run: python tools/benchmark_qsec.py > benchmark-results.json
       - run: python tools/benchmark_trust_mesh.py > trust-mesh-results.json
+      - run: python tools/benchmark_quantum_core.py --native build/qsec-law-core > quantum-core-results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -34,3 +38,4 @@ jobs:
           path: |
             benchmark-results.json
             trust-mesh-results.json
+            quantum-core-results.json

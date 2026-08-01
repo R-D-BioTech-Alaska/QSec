@@ -13,6 +13,7 @@ from .entropy import assess_entropy
 from .evidence import EvidenceLedger
 from .model import SecuritySnapshot
 from .physics import validate_state_payload
+from .quantum_cli import register_quantum_subcommands
 from .threat_catalog import THREATS
 from .trust_cli import register_trust_subcommands
 
@@ -179,6 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
     ledger_append.set_defaults(function=command_ledger_append)
 
     register_trust_subcommands(subparsers)
+    register_quantum_subcommands(subparsers)
     return parser
 
 

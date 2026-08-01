@@ -14,7 +14,7 @@
 
 ### Physics-grounded security for classical, quantum, and AI systems
 
-**QSec treats identity, entropy, circuit structure, calibration, measurement, and state validity as security boundaries that can be measured and verified.**
+**QSec treats identity, entropy, circuit structure, calibration, measurement, authorization, and state validity as security boundaries that can be measured and verified.**
 
 </div>
 
@@ -24,70 +24,76 @@
 
 Quantum capability creates new security problems and accelerates old ones. Public-key systems must be migrated before stored information becomes vulnerable to future decryption. Quantum workloads also introduce attack surfaces that normal antivirus software does not understand: state preparation, control pulses, calibration, transpilation, reset, ancilla, measurement, error correction, entropy, and remote backends.
 
-A quantum system cannot be secured by telling it not to cross a boundary. The boundary has to be enforced through physical constraints, authenticated execution contracts, measured baselines, cryptographic controls, and evidence that survives inspection.
+A physical law does not protect a system if the program interpreting it can be replaced. QSec therefore separates the protected application, the security policy, and the quantum verification core. The system must prove what code ran, what state transition occurred, what evidence was produced, and whether independent implementations agree.
 
-QSec is a standalone security project. It does not depend on Brain, QELM, QSA, QZip, Decoder, or any other R&D BioTech Alaska project. Adapters may be added later, but QSec keeps its own authority, data contracts, and release gates.
+QSec keeps its own authority, protocol, replay controls, and release gates. QSA can be used as an isolated quantum worker, but QSec does not hand its security authority to QSA, Brain, QELM, QZip, Decoder, or another project.
 
-## Current Foundation
+## QSec 0.1 Foundation
 
-QSec 0.1.0 establishes the first working security core:
+The first layer established the inspection and evidence core:
 
-- **Quantum-state validation**
-  - statevector normalization;
-  - density-matrix Hermiticity, trace, positivity, and purity bounds;
-  - probability conservation;
-  - Bloch-vector physical bounds;
-  - pure-state fidelity checks.
-- **Circuit integrity**
-  - canonical circuit manifests;
-  - SHA-256 circuit identities;
-  - exact gate, qubit, parameter, depth, and topology comparison;
-  - gate and resource allow-lists.
-- **Calibration and readout monitoring**
-  - T1/T2 validation;
-  - the Markovian `T2 <= 2*T1` consistency bound;
-  - detuning, gate-error, readout-matrix, and reset-residue drift;
-  - measurement-distribution comparison with a shot-dependent noise floor.
-- **Entropy health**
-  - byte Shannon entropy;
-  - conservative sample min-entropy estimate;
-  - bit bias;
-  - serial correlation;
-  - repeated-value detection.
-- **Post-quantum migration inventory**
-  - detection of quantum-vulnerable RSA, finite-field, and elliptic-curve use;
-  - recognition of ML-KEM, ML-DSA, and SLH-DSA;
-  - separate status for algorithms selected or still under standardization.
-- **Tamper-evident evidence**
-  - SHA-256 or HMAC-SHA-256 chained JSON records;
-  - full-chain verification before every append;
-  - deterministic canonical encoding.
-- **Professional threat vocabulary**
-  - Phaseworm, Shadow Circuit, State Leech, Collapseware, Driftroot, Noisecloak,
-    Pulse Parasite, Syndrome Forger, Entanglement Siphon, Oracle Mimic,
-    Coherence Eater, State Doppelgänger, Basis Trap, Readout Phantom,
-    Reset Ghost, Ancilla Parasite, Channel Splice, Correlation Forge,
-    Entropy Leech, and Harvest Vault.
+- quantum-state validation for statevectors, density matrices, probability vectors, and Bloch vectors;
+- exact circuit manifests and SHA-256 circuit identities;
+- T1/T2, detuning, readout, reset, gate-error, and measurement drift checks;
+- entropy-source health checks;
+- post-quantum migration inventory;
+- SHA-256 or HMAC-SHA-256 chained evidence records;
+- the initial QSec threat taxonomy.
 
 ## QSec 0.2 Trust Mesh
 
-The second layer moves QSec from observation into independently verifiable trust controls:
+The second layer added independently verifiable controls around systems ordinary malware scanners cannot inspect:
 
 - authenticated software, model, compiler, backend, policy, and pulse artifacts;
-- exact pulse-schedule identity plus physical envelope, overlap, duty-cycle, slew, energy, waveform, and spectral checks;
-- binary-symplectic stabilizer syndrome verification with error, correction, ancilla, round, and decoder evidence;
-- governed AI and automated actions using authenticated approvals, separation of duties, and exact-bound capability leases;
-- calibrated first-law thermal telemetry with temperature, power, rate, continuity, and energy-balance checks;
-- deterministic incident reconstruction and evidence roots;
-- a 17-case controlled attack matrix with 12 malicious mutations and five clean controls.
+- exact pulse-schedule identity and physical envelope checks;
+- binary-symplectic stabilizer syndrome verification;
+- governed AI and automated actions using authenticated approvals and exact-bound capability leases;
+- calibrated first-law thermal telemetry;
+- deterministic incident reconstruction and chained evidence roots;
+- a 17-case controlled trust-mesh matrix.
 
-QSec does not execute model or tool actions. It only decides whether a narrowly bound capability lease may be issued. The current attestation and approval authenticators use HMAC-SHA-256, which provides symmetric integrity and authenticity between parties that already share protected keys; it is not a public signature system.
+QSec does not execute the protected action. It decides whether a narrowly bound capability lease may be issued.
+
+## QSec 0.3 Cross-Code Quantum Core
+
+QSec 0.3 prevents one codebase from declaring its own quantum result valid.
+
+The default verification route uses:
+
+- an isolated Python dense-state worker;
+- an independent C++17 dense-state worker;
+- randomized worker order;
+- unanimous phase-sensitive witness comparison;
+- a durable SQLite replay guard;
+- an optional isolated QSA worker.
+
+The workers communicate through `QSEC-QH/1`, a strict ASCII protocol containing values only. It does not accept pickles, callbacks, shared-memory objects, code strings, shell commands, or plugin loading.
+
+Each worker independently calculates:
+
+- the authenticated request digest;
+- a phase-sensitive state commitment;
+- a probability commitment;
+- probability normalization;
+- a backend-independent consensus digest.
+
+The workers never return the internal statevector. A relative-phase change is detected even when computational-basis probabilities remain unchanged.
+
+The default mesh fails closed on a timeout, malformed witness, worker failure, request mismatch, or disagreement. QSA can be added as a third worker, but it receives no replay database, policy authority, route information, or other worker result.
 
 ## Installation
 
 ```bash
 python -m pip install -e .
 ```
+
+Build the independent native law worker:
+
+```bash
+python tools/build_native_core.py --output build/qsec-law-core
+```
+
+The native worker requires a C++17 compiler. It has no external runtime dependency.
 
 ## Command Line
 
@@ -135,9 +141,7 @@ Print the machine-readable threat taxonomy:
 qsec threats
 ```
 
-Exit code `0` means the command passed its current policy. Exit code `2` means a policy failure or high-severity finding was produced.
-
-Additional 0.2 commands:
+Trust-mesh commands:
 
 ```bash
 qsec attest sign manifest.json --key-id root --key-hex <hex-key> --output signed.json
@@ -148,52 +152,101 @@ qsec thermal inspect examples/thermal_telemetry.json --policy examples/thermal_p
 qsec scenarios
 ```
 
-The controlled scenario matrix is an acceptance test, not a production detection-rate estimate.
+Cross-code quantum verification:
+
+```bash
+qsec quantum verify examples/quantum_request.json \
+  --native build/qsec-law-core
+```
+
+Add QSA as a third isolated worker:
+
+```bash
+qsec quantum verify examples/quantum_request.json \
+  --native build/qsec-law-core \
+  --qsa
+```
+
+Run the controlled cross-code matrix:
+
+```bash
+qsec quantum scenarios --native build/qsec-law-core
+```
+
+Exit code `0` means the command passed its active policy. Exit code `2` means it failed closed or produced a high-severity finding.
+
+## Cross-Code Contract
+
+A quantum request binds:
+
+- request identity;
+- one-time nonce;
+- policy digest;
+- parent evidence digest;
+- register width;
+- initial basis state;
+- ordered gate sequence;
+- integer nanoradian rotation values.
+
+Supported gates are `X`, `Y`, `Z`, `H`, `S`, `T`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, and `SWAP`. Qubit 0 is the least-significant basis bit, matching QSA.
+
+No application receives a law-core object or reusable internal handle. The only accepted operation is a bounded verification request. The only returned state information is a cryptographic commitment.
 
 ## Security Model
 
-QSec uses separate trust planes because the evidence is different for each failure:
+QSec uses separate trust planes because each failure needs different evidence:
 
-1. **Identity:** Is this the backend, compiler, channel, model, or device that was approved?
+1. **Identity:** Is this the backend, compiler, channel, model, worker, or device that was approved?
 2. **Entropy:** Is the randomness source behaving inside its measured health envelope?
 3. **Execution:** Is the actual circuit or control sequence the one that was authorized?
 4. **Physics:** Is the reported state mathematically and physically valid?
-5. **Calibration:** Did coherence, detuning, reset, readout, or gate behavior move outside baseline?
-6. **Cryptography:** Which assets remain exposed to quantum-vulnerable key exchange or signatures?
-7. **Evidence:** Can the observation history be verified without silently accepting altered records?
+5. **Cross-code agreement:** Do independent implementations produce the same phase-sensitive result?
+6. **Calibration:** Did coherence, detuning, reset, readout, pulse, or gate behavior move outside baseline?
+7. **Cryptography:** Which assets remain exposed to quantum-vulnerable key exchange or signatures?
+8. **Authorization:** Is the requested action exactly the action that was approved?
+9. **Evidence:** Can the observation history be verified without silently accepting altered records?
 
-An anomaly is initially recorded as a **disturbance**. QSec does not call every deviation an attack. Promotion to breach, compromise, or collapse requires stronger evidence and an explicit response policy.
+An anomaly is first recorded as a disturbance. Promotion to breach, compromise, or collapse requires stronger evidence and an explicit response policy.
 
 ## Important Boundaries
 
-- QSec does not create new cryptographic primitives. It inventories and controls the use of standardized algorithms.
+- QSec does not invent replacement cryptographic primitives. Standard algorithms still provide signatures, key establishment, and hardware identity.
+- The cross-code core prevents one worker from approving itself, but two implementations can still share the same conceptual defect.
+- Process isolation blocks ordinary imports and object access. It does not stop a fully compromised host kernel, malicious compiler, debugger with equal privilege, or hardware memory observer.
+- High-risk deployments should place the law core in a measured VM, separate machine, TPM-backed appliance, enclave, or other independently controlled boundary.
+- QSA is optional. It expands structured-state capacity and provides a third implementation path, but it does not receive QSec policy or security authority.
 - Entropy checks are online health indicators, not a substitute for a full entropy-source validation program.
 - The `T2 <= 2*T1` check is a model-consistency test for the usual Markovian relaxation model, not a universal law for every non-Markovian experiment.
-- Exact circuit comparison can detect benign compiler changes. Production deployments should approve known compiled manifests rather than weakening the comparison.
-- A local unkeyed hash chain detects edits relative to its retained root, but an attacker who can rewrite the entire ledger can replace that root. Important roots must be HMAC-protected, signed, or anchored outside the protected host.
-- QSec 0.1.0 detects and records. Automated containment, host antivirus, pulse attestation, QEC syndrome verification, remote-channel proofs, and AI action governance are the next implementation layers.
+- A local hash chain or replay database can be replaced by an attacker who controls the entire host. Important roots must be signed, hardware sealed, or anchored outside that host.
+- Controlled matrices are acceptance tests, not production detection-rate estimates.
 
 ## Validation
 
-Run the focused suite:
+Run the suite:
 
 ```bash
-python -m compileall -q qsec tests tools
-python -m unittest discover -s tests -v
+python tools/build_native_core.py --output build/qsec-law-core
+QSEC_NATIVE_CORE=build/qsec-law-core python -m compileall -q qsec tests tools
+QSEC_NATIVE_CORE=build/qsec-law-core python -m unittest discover -s tests -v
 ```
 
-Run the bounded benchmark:
+Run all bounded benchmarks:
 
 ```bash
 python tools/benchmark_qsec.py
+python tools/benchmark_trust_mesh.py
+python tools/benchmark_quantum_core.py --native build/qsec-law-core
 ```
 
-The benchmark reports entropy-analysis throughput, exact circuit-comparison throughput, and evidence-ledger append/verification throughput. Results are workload-specific and are not universal security multipliers.
+The QSec 0.3 matrix contains seven malicious mutations and three clean controls. It covers gate insertion, relative-phase injection, target substitution, initial-state substitution, worker disagreement, nonce replay, malformed protocol input, and clean Bell, GHZ, and rotation circuits.
+
+The benchmark reports Python-worker, native-worker, and unanimous-mesh throughput. Results are workload-specific and are not universal security multipliers.
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [QSec 0.2 trust mesh](docs/TRUST_MESH.md)
+- [QSec 0.3 cross-code quantum core](docs/QUANTUM_CORE.md)
 - [Threat taxonomy](docs/THREAT_TAXONOMY.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Post-quantum transition](docs/CRYPTOGRAPHIC_TRANSITION.md)
@@ -202,13 +255,13 @@ The benchmark reports entropy-analysis throughput, exact circuit-comparison thro
 
 The next evidence-bearing layers are:
 
-1. asymmetric and hardware-rooted attestation adapters without replacing the HMAC trust domain;
-2. host filesystem, process, memory, network, and conventional malware containment;
+1. hardware-rooted signing and measured-boot receipts;
+2. host filesystem, process, memory, network, and persistence containment;
 3. captured hardware pulse traces and independently sealed calibration evidence;
-4. fault-injection and error-correction datasets beyond deterministic stabilizer witnesses;
-5. remote-channel, temporary-node, Bell-pair, and correlation challenge protocols;
-6. AI memory, training-data, tool-output, and action-result receipts with rollback;
-7. independent hardware entropy and multi-sensor thermodynamic telemetry;
+4. persistent law-core services with hidden challenge state and one-way capability channels;
+5. remote Bell-pair and correlation challenge protocols;
+6. fault-injection and error-correction datasets beyond deterministic witnesses;
+7. AI memory, training-data, tool-output, and action-result receipts with rollback;
 8. adversarial datasets with matched benign variation and sealed false-positive evaluation.
 
-Every layer must report what it detects, what it does not detect, runtime cost, false-positive cost, and the evidence needed before a disturbance is promoted.
+Every layer must report what it detects, what it does not detect, runtime cost, false-positive cost, and the evidence required before a disturbance is promoted.

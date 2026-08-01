@@ -9,4 +9,5 @@ dist/
 .venv/
 venv/
 qsec-ledger.jsonl
+qsec-quantum-nonces.sqlite3*
 benchmark-results.json

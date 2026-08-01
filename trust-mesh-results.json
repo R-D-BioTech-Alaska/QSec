@@ -1,0 +1,178 @@
+{
+  "action_authorization": {
+    "iterations": 3000,
+    "operations_per_second": 8830.057707164278,
+    "seconds": 0.339748629000006
+  },
+  "attestation_verification": {
+    "iterations": 5000,
+    "operations_per_second": 28913.138582373736,
+    "seconds": 0.1729317619999975
+  },
+  "controlled_scenarios": {
+    "benign_controls": 5,
+    "false_negative": 0,
+    "false_positive": 0,
+    "malicious_scenarios": 12,
+    "precision": 1.0,
+    "recall": 1.0,
+    "results": [
+      {
+        "detected": false,
+        "domain": "attestation",
+        "finding_count": 0,
+        "highest_severity": "informational",
+        "malicious": false,
+        "name": "attestation-clean"
+      },
+      {
+        "detected": true,
+        "domain": "attestation",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "attestation-forged-signature"
+      },
+      {
+        "detected": true,
+        "domain": "attestation",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "attestation-artifact-substitution"
+      },
+      {
+        "detected": true,
+        "domain": "attestation",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "attestation-context-replay"
+      },
+      {
+        "detected": false,
+        "domain": "pulse",
+        "finding_count": 0,
+        "highest_severity": "informational",
+        "malicious": false,
+        "name": "pulse-clean"
+      },
+      {
+        "detected": true,
+        "domain": "pulse",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "pulse-amplitude-steering"
+      },
+      {
+        "detected": true,
+        "domain": "pulse",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "pulse-phase-injection"
+      },
+      {
+        "detected": true,
+        "domain": "pulse",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "pulse-waveform-grafting"
+      },
+      {
+        "detected": false,
+        "domain": "qec",
+        "finding_count": 0,
+        "highest_severity": "informational",
+        "malicious": false,
+        "name": "qec-clean"
+      },
+      {
+        "detected": true,
+        "domain": "qec",
+        "finding_count": 2,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "qec-syndrome-injection"
+      },
+      {
+        "detected": true,
+        "domain": "qec",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "qec-ancilla-tampering"
+      },
+      {
+        "detected": true,
+        "domain": "qec",
+        "finding_count": 2,
+        "highest_severity": "high",
+        "malicious": true,
+        "name": "qec-decoder-disagreement"
+      },
+      {
+        "detected": false,
+        "domain": "governance",
+        "finding_count": 0,
+        "highest_severity": "informational",
+        "malicious": false,
+        "name": "governance-clean"
+      },
+      {
+        "detected": true,
+        "domain": "governance",
+        "finding_count": 3,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "governance-approval-forgery"
+      },
+      {
+        "detected": true,
+        "domain": "governance",
+        "finding_count": 1,
+        "highest_severity": "critical",
+        "malicious": true,
+        "name": "governance-scope-escalation"
+      },
+      {
+        "detected": false,
+        "domain": "thermal",
+        "finding_count": 0,
+        "highest_severity": "informational",
+        "malicious": false,
+        "name": "thermal-clean"
+      },
+      {
+        "detected": true,
+        "domain": "thermal",
+        "finding_count": 3,
+        "highest_severity": "high",
+        "malicious": true,
+        "name": "thermal-energy-inconsistency"
+      }
+    ],
+    "scenario_count": 17,
+    "specificity": 1.0,
+    "true_negative": 5,
+    "true_positive": 12
+  },
+  "pulse_verification": {
+    "iterations": 5000,
+    "operations_per_second": 13450.392783212214,
+    "seconds": 0.37173635599999955
+  },
+  "qec_verification": {
+    "iterations": 5000,
+    "operations_per_second": 19281.583693956323,
+    "seconds": 0.259314799000002
+  },
+  "schema_version": "qsec.trust-mesh-benchmark.v1",
+  "thermal_verification": {
+    "iterations": 5000,
+    "operations_per_second": 166870.3486141948,
+    "seconds": 0.029963381999998262
+  }
+}
