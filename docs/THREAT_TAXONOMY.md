@@ -41,6 +41,10 @@ QSec names a threat by the mechanism it uses, not by placing a letter in front o
 | QSEC-ANCILLA-001 | Ancilla Parasite | Ancilla | Compromises helper qubits used for verification or correction |
 | QSEC-CHANNEL-001 | Channel Splice | Channel | Inserts an unauthorized endpoint into a trusted channel |
 | QSEC-CORR-001 | Correlation Forge | Correlation | Manufactures false but plausible correlations |
+| QSEC-POLICY-001 | Policy Parasite | Policy | Substitutes, weakens, or bypasses the active security policy |
+| QSEC-CAP-001 | Capability Escalator | Authorization | Expands a bounded permission into broader scope, duration, reuse, or action |
+| QSEC-INTENT-001 | Intent Forger | Request and context | Rebinds approval to a different actor, request, resource, nonce, or context |
+| QSEC-CONSENSUS-001 | Consensus Forge | Approval and verification | Manufactures or corrupts independent approvals so a false quorum appears valid |
 | QSEC-ENTROPY-001 | Entropy Leech | Randomness | Predicts, reuses, reduces, or biases an entropy source |
 | QSEC-CRYPTO-001 | Harvest Vault | Cryptography and storage | Stores protected data for later quantum decryption |
 
@@ -66,6 +70,14 @@ QSec names a threat by the mechanism it uses, not by placing a letter in front o
 - Compiler Poisoning
 - Transpiler Grafting
 - Coherence Starvation
+- Policy Substitution
+- Rule Downgrade
+- Scope Escalation
+- Action Rebinding
+- Request Rebinding
+- Context Replay
+- Approval Forgery
+- Quorum Replay
 
 ## Classification Rule
 

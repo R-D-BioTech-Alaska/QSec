@@ -13,7 +13,8 @@ from .entropy import assess_entropy
 from .evidence import EvidenceLedger
 from .model import SecuritySnapshot
 from .physics import validate_state_payload
-from .threats import THREATS
+from .threat_catalog import THREATS
+from .trust_cli import register_trust_subcommands
 
 
 def _load_json(path: str | Path) -> Dict[str, Any]:
@@ -177,6 +178,7 @@ def build_parser() -> argparse.ArgumentParser:
     ledger_append.add_argument("--key-hex")
     ledger_append.set_defaults(function=command_ledger_append)
 
+    register_trust_subcommands(subparsers)
     return parser
 
 

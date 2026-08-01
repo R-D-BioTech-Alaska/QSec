@@ -1,0 +1,9 @@
+{
+  "allowed_channels": ["d0"],
+  "maximum_absolute_amplitude": 0.5,
+  "maximum_duration": 0.2,
+  "maximum_schedule_duration": 1.0,
+  "maximum_duty_cycle": 1.0,
+  "maximum_slew_rate": 20.0,
+  "maximum_control_energy": 1.0
+}

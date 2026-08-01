@@ -106,7 +106,7 @@ The 0.1.0 engine emits observations and disturbances. It does not automatically 
 
 Physical law is useful when it creates a measurable invariant or budget. It is not a naming convention.
 
-Current invariants include probability conservation, density-matrix positivity, state normalization, Bloch bounds, and a T1/T2 consistency check under a stated relaxation model.
+Current invariants include probability conservation, density-matrix positivity, state normalization, Bloch bounds, a T1/T2 consistency check under a stated relaxation model, pulse-control envelopes, stabilizer syndrome consistency, and a calibrated first-law energy balance.
 
 Future thermodynamic controls should consume real telemetry:
 
@@ -118,6 +118,32 @@ Future thermodynamic controls should consume real telemetry:
 - unexplained heat or power changes correlated with computation.
 
 QSec will not claim that thermodynamics blocks an attack unless the measured energy or entropy boundary actually supports that conclusion.
+
+## QSec 0.2 Trust Mesh
+
+### Authenticated Identity and Artifact Plane
+
+Attestations now bind an issuer, subject, nonce, sequence, lifetime, policy, parent trust state, and named artifact hashes. Required artifacts fail closed when absent. HMAC-SHA-256 is used as a symmetric authenticator; deployments needing public verification must add an approved asymmetric or hardware-rooted signer without weakening the existing binding.
+
+### Pulse-Control Plane
+
+Pulse schedules are compared as ordered physical controls rather than generic files. QSec verifies backend, clock, channel, timing, duration, amplitude, circular phase, frequency, shape, sampled waveform, spectral residual, overlap, duty cycle, slew rate, and a calibrated control-energy proxy.
+
+### Error-Correction Evidence Plane
+
+Stabilizer evidence is verified with binary symplectic algebra. The verifier checks code identity, challenge and round continuity, error-to-syndrome consistency, correction residuals, ancilla agreement, and independent decoder votes.
+
+### Governed Action Plane
+
+Models and automated systems receive no direct execution authority from QSec. Authenticated approvals can issue a short-lived, exact-bound, use-limited capability lease. Forged, stale, duplicated, denied, or mismatched approvals block the request even when another subset appears to satisfy quorum.
+
+### Thermodynamic Plane
+
+QSec now supports a calibrated lumped first-law model using temperature, input power, cooling power, passive heat flow, and heat capacity. This creates an energy-consistency residual inside a declared sensor model. It does not convert every heat anomaly into an attack finding.
+
+### Incident Plane
+
+Evidence events can be deterministically grouped, ordered, content-digested, and chained into an incident evidence root. Independent sources may promote a confirmed breach to a compromise; collapse remains an explicit state.
 
 ## AI Security Boundary
 

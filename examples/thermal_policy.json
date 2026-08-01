@@ -1,0 +1,12 @@
+{
+  "minimum_temperature": 3.0,
+  "maximum_temperature": 6.0,
+  "maximum_temperature_rate": 0.5,
+  "maximum_sensor_step": 0.5,
+  "heat_capacity": 10.0,
+  "ambient_temperature": 4.0,
+  "passive_conductance": 0.0,
+  "maximum_first_law_residual": 0.25,
+  "maximum_input_power": 10.0,
+  "maximum_cooling_power": 10.0
+}

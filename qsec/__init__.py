@@ -1,6 +1,6 @@
 from .engine import QSecPolicy, QuantumSecurityEngine
 from .model import Finding, FindingStatus, InspectionReport, SecuritySnapshot, Severity
-from .threats import THREATS, ThreatDefinition, get_threat
+from .threat_catalog import THREATS, ThreatDefinition, get_threat
 
 __all__ = [
     "Finding",
@@ -15,4 +15,4 @@ __all__ = [
     "get_threat",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

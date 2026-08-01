@@ -1,0 +1,16 @@
+{
+  "backend_id": "backend-a",
+  "clock_period": 1e-09,
+  "segments": [
+    {
+      "channel": "d0",
+      "start": 0.0,
+      "duration": 0.1,
+      "amplitude": 0.2,
+      "phase": 0.1,
+      "frequency": 5.0,
+      "shape": "sampled",
+      "samples": [0.0, 0.1, 0.2, 0.1, 0.0]
+    }
+  ]
+}

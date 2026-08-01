@@ -69,6 +69,20 @@ QSec 0.1.0 establishes the first working security core:
     Reset Ghost, Ancilla Parasite, Channel Splice, Correlation Forge,
     Entropy Leech, and Harvest Vault.
 
+## QSec 0.2 Trust Mesh
+
+The second layer moves QSec from observation into independently verifiable trust controls:
+
+- authenticated software, model, compiler, backend, policy, and pulse artifacts;
+- exact pulse-schedule identity plus physical envelope, overlap, duty-cycle, slew, energy, waveform, and spectral checks;
+- binary-symplectic stabilizer syndrome verification with error, correction, ancilla, round, and decoder evidence;
+- governed AI and automated actions using authenticated approvals, separation of duties, and exact-bound capability leases;
+- calibrated first-law thermal telemetry with temperature, power, rate, continuity, and energy-balance checks;
+- deterministic incident reconstruction and evidence roots;
+- a 17-case controlled attack matrix with 12 malicious mutations and five clean controls.
+
+QSec does not execute model or tool actions. It only decides whether a narrowly bound capability lease may be issued. The current attestation and approval authenticators use HMAC-SHA-256, which provides symmetric integrity and authenticity between parties that already share protected keys; it is not a public signature system.
+
 ## Installation
 
 ```bash
@@ -123,6 +137,19 @@ qsec threats
 
 Exit code `0` means the command passed its current policy. Exit code `2` means a policy failure or high-severity finding was produced.
 
+Additional 0.2 commands:
+
+```bash
+qsec attest sign manifest.json --key-id root --key-hex <hex-key> --output signed.json
+qsec attest verify signed.json --key-id root --key-hex <hex-key> --artifact runtime.bin=runtime.bin
+qsec pulse inspect examples/pulse_current.json --baseline examples/pulse_baseline.json --policy examples/pulse_policy.json
+qsec qec verify examples/qec_code.json examples/qec_evidence.json --expected-nonce qec-challenge --minimum-round 3 --expected-previous-digest previous
+qsec thermal inspect examples/thermal_telemetry.json --policy examples/thermal_policy.json
+qsec scenarios
+```
+
+The controlled scenario matrix is an acceptance test, not a production detection-rate estimate.
+
 ## Security Model
 
 QSec uses separate trust planes because the evidence is different for each failure:
@@ -166,21 +193,22 @@ The benchmark reports entropy-analysis throughput, exact circuit-comparison thro
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [QSec 0.2 trust mesh](docs/TRUST_MESH.md)
 - [Threat taxonomy](docs/THREAT_TAXONOMY.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Post-quantum transition](docs/CRYPTOGRAPHIC_TRANSITION.md)
 
 ## Project Direction
 
-The next QSec layers are bounded and measurable:
+The next evidence-bearing layers are:
 
-1. signed software, model, compiler, pulse, and backend manifests;
-2. host filesystem and process monitoring for conventional malware;
-3. pulse-schedule and calibration attestation;
-4. reset, ancilla, syndrome, and measurement challenge protocols;
-5. remote channel and temporary-node verification;
-6. AI model integrity, tool authorization, action limits, and rollback;
-7. independent hardware entropy and thermodynamic telemetry;
-8. reproducible attack simulations and matched false-positive baselines.
+1. asymmetric and hardware-rooted attestation adapters without replacing the HMAC trust domain;
+2. host filesystem, process, memory, network, and conventional malware containment;
+3. captured hardware pulse traces and independently sealed calibration evidence;
+4. fault-injection and error-correction datasets beyond deterministic stabilizer witnesses;
+5. remote-channel, temporary-node, Bell-pair, and correlation challenge protocols;
+6. AI memory, training-data, tool-output, and action-result receipts with rollback;
+7. independent hardware entropy and multi-sensor thermodynamic telemetry;
+8. adversarial datasets with matched benign variation and sealed false-positive evaluation.
 
-Each layer must demonstrate what it detects, its false-positive cost, its runtime cost, and what evidence is required before QSec promotes a disturbance to a confirmed compromise.
+Every layer must report what it detects, what it does not detect, runtime cost, false-positive cost, and the evidence needed before a disturbance is promoted.
