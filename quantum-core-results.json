@@ -1,0 +1,80 @@
+{
+  "controlled_scenarios": {
+    "clean": 3,
+    "false_negative": 0,
+    "false_positive": 0,
+    "malicious": 7,
+    "passed": true,
+    "results": [
+      {
+        "detail": "independent workers agree",
+        "detected": true,
+        "malicious": false,
+        "name": "clean_bell"
+      },
+      {
+        "detail": "independent workers agree",
+        "detected": true,
+        "malicious": false,
+        "name": "clean_ghz"
+      },
+      {
+        "detail": "independent workers agree",
+        "detected": true,
+        "malicious": false,
+        "name": "clean_rotation"
+      },
+      {
+        "detail": "quantum witness changed",
+        "detected": true,
+        "malicious": true,
+        "name": "gate_insertion"
+      },
+      {
+        "detail": "quantum witness changed",
+        "detected": true,
+        "malicious": true,
+        "name": "relative_phase_injection"
+      },
+      {
+        "detail": "quantum witness changed",
+        "detected": true,
+        "malicious": true,
+        "name": "target_substitution"
+      },
+      {
+        "detail": "quantum witness changed",
+        "detected": true,
+        "malicious": true,
+        "name": "initial_state_substitution"
+      },
+      {
+        "detail": "unanimity failed closed",
+        "detected": true,
+        "malicious": true,
+        "name": "worker_divergence"
+      },
+      {
+        "detail": "durable nonce uniqueness",
+        "detected": true,
+        "malicious": true,
+        "name": "nonce_replay"
+      },
+      {
+        "detail": "strict parser rejected input",
+        "detected": true,
+        "malicious": true,
+        "name": "noncanonical_protocol"
+      }
+    ],
+    "total": 10,
+    "true_negative": 3,
+    "true_positive": 7
+  },
+  "gates": 7,
+  "native_cpp_ops_per_second": 707.3392187540842,
+  "protocol": "QSEC-QH/1",
+  "python_isolated_ops_per_second": 20.29385154476614,
+  "qubits": 4,
+  "unanimous_mesh_ops_per_second": 19.690435975929905
+}

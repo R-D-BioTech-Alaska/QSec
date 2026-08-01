@@ -1,0 +1,16 @@
+{
+  "samples": [
+    {
+      "timestamp": "2026-08-01T12:00:00+00:00",
+      "temperature": 4.0,
+      "input_power": 2.0,
+      "cooling_power": 1.0
+    },
+    {
+      "timestamp": "2026-08-01T12:00:01+00:00",
+      "temperature": 4.1,
+      "input_power": 2.0,
+      "cooling_power": 1.0
+    }
+  ]
+}

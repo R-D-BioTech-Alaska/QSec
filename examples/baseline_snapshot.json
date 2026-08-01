@@ -1,0 +1,29 @@
+{
+  "backend_id": "lab-backend-01",
+  "backend_fingerprint": "sha256:replace-with-attested-backend-fingerprint",
+  "circuit": {
+    "name": "bell-verification",
+    "backend_family": "qsa",
+    "num_qubits": 2,
+    "operations": [
+      {"name": "H", "qubits": [0]},
+      {"name": "CNOT", "qubits": [0, 1]}
+    ]
+  },
+  "calibration": {
+    "t1": [100.0, 105.0],
+    "t2": [150.0, 155.0],
+    "detuning": [0.0, 0.0],
+    "readout_matrices": [
+      [[0.98, 0.03], [0.02, 0.97]],
+      [[0.97, 0.04], [0.03, 0.96]]
+    ],
+    "reset_excited_probability": [0.01, 0.01],
+    "gate_error_rates": {"H": 0.001, "CNOT": 0.01}
+  },
+  "measurement_counts": {"00": 510, "11": 514},
+  "state": {
+    "kind": "statevector",
+    "values": [[0.7071067811865476, 0.0], [0.0, 0.0], [0.0, 0.0], [0.7071067811865476, 0.0]]
+  }
+}

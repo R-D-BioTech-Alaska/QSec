@@ -1,0 +1,4 @@
+{
+  "name": "bit-flip-3",
+  "stabilizers": ["ZZI", "IZZ"]
+}
