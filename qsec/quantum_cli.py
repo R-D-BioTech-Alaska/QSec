@@ -4,19 +4,32 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
+from .qsa_evidence import QSAEvidencePolicy, QSAEvidenceRequest, run_qsa_evidence
 from .quantum_core import QuantumRequest
 from .quantum_hopper import HopperMesh, QuantumReplayGuard, native_worker, python_worker, qsa_worker
 from .quantum_scenarios import run_quantum_scenarios, summarize_quantum_scenarios
 
 
-def _load_request(path: str | Path) -> QuantumRequest:
+def _load_object(path: str | Path) -> Mapping[str, object]:
     with Path(path).open("r", encoding="utf-8") as handle:
         payload: Any = json.load(handle)
     if not isinstance(payload, dict):
-        raise ValueError("quantum request must contain a JSON object")
-    return QuantumRequest.from_dict(payload)
+        raise ValueError(f"{path} must contain a JSON object")
+    return payload
+
+
+def _load_request(path: str | Path) -> QuantumRequest:
+    return QuantumRequest.from_dict(_load_object(path))
+
+
+def _load_qsa_request(path: str | Path) -> QSAEvidenceRequest:
+    return QSAEvidenceRequest.from_dict(_load_object(path))
+
+
+def _load_qsa_policy(path: str | Path | None) -> QSAEvidencePolicy:
+    return QSAEvidencePolicy() if path is None else QSAEvidencePolicy.from_dict(_load_object(path))
 
 
 def _default_native() -> Path | None:
@@ -45,6 +58,28 @@ def command_quantum_verify(args: argparse.Namespace) -> int:
         replay_guard=replay_guard,
     )
     receipt = mesh.verify(request)
+    payload = receipt.to_dict()
+    accepted = receipt.accepted
+    if args.qsa:
+        evidence = run_qsa_evidence(
+            QSAEvidenceRequest.from_quantum_request(request),
+            _load_qsa_policy(args.qsa_policy),
+            timeout_seconds=args.qsa_timeout,
+        )
+        payload["mesh_accepted"] = receipt.accepted
+        payload["qsa_evidence"] = evidence.to_dict()
+        accepted = accepted and evidence.accepted
+        payload["accepted"] = accepted
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0 if accepted else 2
+
+
+def command_qsa_evidence(args: argparse.Namespace) -> int:
+    receipt = run_qsa_evidence(
+        _load_qsa_request(args.request),
+        _load_qsa_policy(args.policy),
+        timeout_seconds=args.timeout,
+    )
     print(json.dumps(receipt.to_dict(), indent=2, sort_keys=True))
     return 0 if receipt.accepted else 2
 
@@ -61,16 +96,34 @@ def command_quantum_scenarios(args: argparse.Namespace) -> int:
 def register_quantum_subcommands(subparsers: argparse._SubParsersAction) -> None:
     quantum = subparsers.add_parser("quantum", help="Run cross-code quantum-law verification")
     quantum_subparsers = quantum.add_subparsers(dest="quantum_command", required=True)
-    verify = quantum_subparsers.add_parser("verify", help="Verify one canonical quantum request across isolated workers")
+
+    verify = quantum_subparsers.add_parser(
+        "verify",
+        help="Verify one canonical quantum request across isolated workers",
+    )
     verify.add_argument("request")
     verify.add_argument("--native", help="Path to the compiled qsec-law-core executable")
-    verify.add_argument("--qsa", action="store_true", help="Add an isolated QSA worker to the verification route")
+    verify.add_argument("--qsa", action="store_true", help="Add QSA cross-code and structural evidence")
+    verify.add_argument("--qsa-policy", help="QSA evidence policy JSON")
+    verify.add_argument("--qsa-timeout", type=float, default=30.0)
     verify.add_argument("--replay-db", default="qsec-quantum-nonces.sqlite3")
     verify.add_argument("--no-replay-guard", action="store_true")
     verify.add_argument("--minimum-agreement", type=int)
     verify.add_argument("--allow-disagreement", action="store_true")
     verify.set_defaults(function=command_quantum_verify)
 
-    scenarios = quantum_subparsers.add_parser("scenarios", help="Run the controlled cross-code acceptance matrix")
+    evidence = quantum_subparsers.add_parser(
+        "qsa-evidence",
+        help="Capture an isolated QSA 0.2 structural state receipt",
+    )
+    evidence.add_argument("request")
+    evidence.add_argument("--policy", help="QSA evidence policy JSON")
+    evidence.add_argument("--timeout", type=float, default=30.0)
+    evidence.set_defaults(function=command_qsa_evidence)
+
+    scenarios = quantum_subparsers.add_parser(
+        "scenarios",
+        help="Run the controlled cross-code acceptance matrix",
+    )
     scenarios.add_argument("--native", help="Path to the compiled qsec-law-core executable")
     scenarios.set_defaults(function=command_quantum_scenarios)
