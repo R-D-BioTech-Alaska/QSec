@@ -52,8 +52,11 @@ jobs:
       - run: python -m pip install -e .
       - run: python -m pip install "qubit-state-algebra @ git+https://github.com/R-D-BioTech-Alaska/QSA.git@v0.2.0"
       - run: qsec quantum qsa-evidence examples/qsa50_ghz_request.json --timeout 120 > qsa-evidence.json
+      - run: qsec quantum qsa-grover examples/qsa60_grover_request.json --timeout 120 > qsa-grover.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: qsa-0.2-evidence
-          path: qsa-evidence.json
+          path: |
+            qsa-evidence.json
+            qsa-grover.json
