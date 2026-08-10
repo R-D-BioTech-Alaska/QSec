@@ -1,0 +1,10 @@
+{
+  "kind": "QSEC-QSA-GROVER/1",
+  "request_id": "4f9133381be3281b10af35d383f751d58f91fb16a49f0d18e12cd6c8f0b728b6",
+  "nonce": "95f94730e1c0d305885452102a134c67fdf7dc30d7bdc4a388ac68feedc2a942",
+  "policy_digest": "284b5ec4d9c2aac2a9c5da23be786ba70b052229188912b1a55a465b53e50bae",
+  "parent_digest": "c96b4915f139d85010b22ecbc602c3568231761a4fe409f1c449d3e9ef5518dc",
+  "qubits": 60,
+  "marked_count": 1,
+  "iterations": "optimal"
+}

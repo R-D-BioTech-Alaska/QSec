@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://discord.gg/sr9QBj3k36">
-    <img src="https://img.shields.io/badge/Discord-Join%20the%20Server-blue?style=for-the-badge" alt="Join our Discord" />
+    <img src="https://img.shields.io/badge/Discord-Join%20the%20Server-blue?style=for-the-badge" alt="Join the QSec Discord server" />
   </a>
 </p>
 
@@ -20,175 +20,164 @@
 
 ---
 
-## What QSec Does
+## What QSec Can Prove Today
 
-QSec is a security and evidence layer for systems where ordinary endpoint security is not enough.
+QSec is a security and evidence layer for systems where ordinary endpoint security is not enough. It separates the application requesting work, the runtime performing it, and the security layer deciding whether the resulting evidence is acceptable.
 
-It can currently:
+Current acceptance paths include:
 
-- authenticate software, model, compiler, backend, policy, pulse, and other named artifacts;
-- bind an approved quantum request to an exact gate sequence, nonce, policy digest, and parent evidence root;
-- verify bounded quantum calculations across independent Python and C++ implementations;
-- detect phase changes that leave computational-basis probabilities unchanged;
-- prevent replay of accepted quantum requests through a durable nonce database;
-- validate statevectors, density matrices, probability vectors, and Bloch vectors;
-- inspect calibration drift, reset behavior, readout, detuning, gate error, pulse envelopes, and thermal telemetry;
-- verify stabilizer error-correction evidence;
-- assess raw entropy-source behavior;
-- inventory source trees for post-quantum migration work;
-- govern automated actions through narrowly bound capability leases;
-- produce chained, deterministic evidence that can be replayed and inspected later;
-- use QSA 0.2 as an isolated structured quantum evidence source without giving QSA security authority.
+| Capability | Current evidence |
+| --- | --- |
+| Independent quantum-law verification | Isolated Python and standalone C++17 workers independently reconstruct bounded states and must agree on a phase-sensitive commitment. |
+| Replay-resistant quantum requests | One-time nonces are consumed through a durable SQLite replay guard before verification. |
+| Structured QSA state evidence | QSA 0.2 execution is isolated and bound to package/native/ABI identity, adaptive state structure, memory, QSC state commitment, exact probes, marginals, and validation. |
+| Nonce-bound Grover challenge | QSec derives the marked state, QSA executes the exact symmetry-compressed search, and QSec independently recomputes the analytic result and optimal iteration count. |
+| Nonce-bound symmetry challenge | QSec derives an independent phase challenge across every Hamming-weight class and verifies QSA class sizes, amplitudes, probabilities, and selected basis membership. |
+| Artifact and runtime trust | Software, model, compiler, backend, policy, pulse, and other named artifacts can be authenticated and bound to policy. |
+| Physical telemetry | Calibration, reset, readout, detuning, gate error, pulse envelopes, thermal telemetry, entropy, and stabilizer evidence can be checked against explicit policy. |
+| Governed automation | Approved automated actions can be restricted through narrowly bound capability leases and deterministic evidence chains. |
+| Post-quantum migration | Source and configuration trees can be inventoried for quantum-vulnerable cryptographic dependencies. |
 
-QSec does not replace cryptography, a TPM, an EDR platform, or a quantum runtime. It provides a control plane around them.
+QSec does not replace cryptography, a TPM, an EDR platform, a QPU, or a quantum runtime. It provides an independently checkable control plane around them.
 
-## Why QSec Exists
+## Measured QSA 0.2 Evidence
 
-Quantum systems create security surfaces that normal malware scanners do not understand: state preparation, circuit substitution, transpilation, pulse control, calibration, reset, ancilla behavior, measurement, entropy, error correction, remote backends, and the quantum runtime itself.
+These are live GitHub Actions results from the pinned QSA 0.2.0 release, not estimated capability claims.
 
-The software interpreting a physical law can still be replaced. A simulator can lie. A backend can be substituted. A valid-looking state can be the wrong state. A correct calculation can be replayed under the wrong authorization.
+| Demonstration | Logical space | QSA evidence/state memory | Dense complex128 equivalent | Measured reduction | Independent QSec check |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 50-qubit GHZ structured state | `2^50` | **5,568 B** | **16 PiB** | **3,235,344,559,892x** | QSC round trip, all marginals, exact probes, native validation |
+| 60-qubit Grover challenge | `2^60` | **96 B** | **16 EiB** | **192,153,584,101,141,162x** | optimal iterations, success probability, class amplitudes, membership probes |
+| 60-qubit Hamming-weight challenge | `2^60` | **1,592 B** | **16 EiB** | **11,587,150,800,068,813x** | all 61 class sizes, amplitudes, probabilities, and selected basis membership |
 
-QSec therefore separates three things that should not share authority:
+The 60-qubit Grover challenge independently produced **843,314,856 optimal iterations** in both QSA and QSec. The success probability and marked/unmarked amplitudes agreed at QSec's `10^-15` receipt scale with zero recorded probability error.
 
-1. the application requesting work;
-2. the runtime performing the work;
-3. the security layer deciding whether the evidence is acceptable.
+The 60-qubit Hamming-weight challenge retained **61 exact amplitude classes**. QSec independently checked every class against `C(60, k)`, regenerated every nonce-derived phase, recomputed every expected class amplitude and probability, and recorded zero maximum amplitude or probability error at the `10^-15` receipt scale.
 
-QSA, Brain, QELM, QZip, Decoder, a cloud backend, or a hardware controller may provide evidence to QSec. They do not inherit QSec policy authority.
+The corresponding accepted receipt digests are:
+
+```text
+50-qubit structured state:  af5e0c39d14ef70b64d4b55c40bace31da5dee4d82e493e7d52a176e3414c6f1
+60-qubit Grover challenge:  3ca12a7f06307b0c15b247aaa0473cfeb4f513c034da6f2cd46c749e17c9b3b5
+60-qubit symmetry challenge:8576ec4e7d88d31fca0c71cdf2d665ea2ccf381ba1ca91370657c54ff16dfbbd
+```
+
+The workflow uploads the complete JSON receipts as the `qsa-0.2-evidence` artifact.
+
+These results demonstrate exact classical structural execution under the stated QSA representation contracts. They are **not** claims of physical quantum hardware, quantum supremacy, or physical Grover query advantage.
+
+## QSec 0.5: Quantum Capability Challenges
+
+QSec 0.5 adds challenge-response evidence around QSA's stronger exact structured engines. The important change is not that QSec trusts QSA more. It is that QSec now asks QSA questions whose answers can be independently derived and checked.
+
+### Grover challenge
+
+A `QSEC-QSA-GROVER/1` request binds:
+
+- request identity;
+- one-time nonce;
+- QSec policy digest;
+- parent evidence digest;
+- logical qubit count;
+- marked-state count;
+- explicit or optimal iteration count.
+
+The marked basis states are derived from the request identity and nonce. QSA therefore does not receive a permanently fixed benchmark target.
+
+The isolated QSA worker returns a self-hashed receipt containing QSA package/native/ABI identity, logical search size, marked-state commitment, iteration count, memory use, success probability, marked/unmarked amplitudes, and membership probes.
+
+QSec then independently:
+
+1. re-derives the nonce-bound marked states;
+2. recomputes the optimal Grover iteration count;
+3. recomputes the expected success probability;
+4. recomputes marked and unmarked amplitudes;
+5. verifies membership probes and memory accounting;
+6. verifies the receipt digest, request digest, policy, version gates, and worker exit status.
+
+A self-reported `accepted=true` from the worker is not sufficient.
+
+### Hamming-weight symmetry challenge
+
+A `QSEC-QSA-SYMMETRY/1` request creates a different phase challenge for every Hamming-weight class from the request identity and nonce.
+
+For 60 qubits that means 61 independently challenged classes spanning the complete `2^60` logical basis space. QSec verifies:
+
+- membership mode is exactly `hamming_weight`;
+- class count is exactly `n + 1`;
+- every class size equals the independent binomial coefficient `C(n, k)`;
+- every challenged class amplitude matches QSec's independent complex reference;
+- every class probability matches `C(n, k) / 2^n`;
+- selected basis states resolve to the expected Hamming-weight amplitude;
+- QSA validation and memory policy pass;
+- request, policy, phase, and receipt digests remain bound.
+
+Grover and symmetry requests use distinct protocol and policy hash domains. Both consume their nonces through QSec's existing durable replay control.
 
 ## QSec 0.4: Structured Quantum Evidence
 
-QSec 0.3 could use QSA as a third dense-state worker. That was useful for bounded cross-code verification, but it left most of QSA's newer state engine invisible to QSec.
+QSec 0.4 expanded the QSA integration beyond a small dense-state adapter.
 
-QSec 0.4 changes that relationship.
+For structured QSA evidence, the worker records:
 
-When QSA evidence is enabled, QSec launches an isolated QSA worker and records a content-addressed receipt of what QSA actually used and what state survived execution. The default policy requires QSA 0.2.0 or newer and ABI 1.5.0 or newer.
-
-The receipt binds:
-
-- the exact QSA evidence request digest;
-- QSA package version, native version, and ABI version;
-- logical qubit width and gate count;
-- operation-plan step count after native compilation;
+- exact QSA evidence request digest;
+- package, native runtime, and ABI versions;
+- logical width, gate count, and compiled operation count;
 - QSA native state validation;
-- component count and component representation kinds;
-- peak component size and nonzero count;
-- a deterministic structure digest;
-- QSA's estimated state memory;
-- the equivalent dense-statevector storage requirement;
-- the measured dense-to-QSA storage reduction;
+- adaptive component representation and nonzero counts;
+- deterministic structure digest;
+- estimated state memory and dense-state equivalent;
 - QSC serialized-state size and SHA-256 commitment;
-- QSC decode, native validation, and exact round-trip checks;
+- QSC reconstruction, validation, equivalence, and byte-stability evidence;
 - deterministic exact amplitude probes;
-- a digest of every single-qubit `P(1)` marginal;
-- the full phase-sensitive state and probability commitments when the request is within the 12-qubit cross-code bound;
-- the final receipt digest and any fail-closed policy failures.
+- every single-qubit `P(1)` marginal commitment;
+- full phase-sensitive state and probability commitments when the request is inside the 12-qubit cross-code bound;
+- final receipt digest and fail-closed policy results.
 
-The QSA worker cannot silently return evidence for another request. QSec validates the receipt framing, hashes the complete receipt body, and verifies that its request digest matches the evidence request that was sent.
+### Two evidence ranges
 
-### Two verification ranges
+**Cross-code range, up to 12 qubits:** Python, standalone C++, and optionally QSA independently reconstruct the full bounded state. QSec can require unanimous phase-sensitive agreement.
 
-QSec deliberately separates two different guarantees.
+**Structured QSA evidence range, up to 64 qubits:** QSec does not enumerate `2^n` amplitudes. It records QSA's exact adaptive representation, QSC commitment and round trip, all single-qubit marginals, deterministic probes, validation, and resource use.
 
-**Cross-code range, up to 12 qubits:** Python, native C++, and optionally QSA independently produce full phase-sensitive state commitments. QSec can require unanimous agreement.
+The guarantees are different and QSec reports them separately.
 
-**Structured QSA evidence range, up to 64 qubits:** QSec does not enumerate `2^n` amplitudes. It records QSA's exact adaptive state structure, QSC state commitment, round-trip equivalence, all single-qubit marginals, deterministic amplitude probes, native validation, and resource use under QSec policy.
+## QSec 0.3: Independent Cross-Code Law Core
 
-Those are different evidence strengths and are reported as such. The wider route is not presented as independent full-state reconstruction.
+No single implementation is allowed to approve its own bounded quantum result.
 
-### Measured 50-qubit result
-
-The repository includes a 50-qubit GHZ request:
-
-```bash
-qsec quantum qsa-evidence examples/qsa50_ghz_request.json
-```
-
-The QSec validation workflow installed the pinned QSA 0.2.0 release and executed that command on August 10, 2026. The run passed with this receipt data:
-
-| Evidence | Recorded result |
-| --- | ---: |
-| QSA package / native / ABI | `0.2.0` / `0.2.0` / `1.5.0` |
-| Logical qubits | 50 |
-| Gates / compiled steps | 50 / 50 |
-| Native QSA validation | passed |
-| QSA components | 1 sparse component |
-| Peak nonzero amplitudes | 2 |
-| Estimated QSA state memory | **5,568 bytes** |
-| QSC state packet | **333 bytes** |
-| Dense complex128 equivalent | **18,014,398,509,481,984 bytes (16 PiB)** |
-| Dense-to-QSA state-memory reduction | **3,235,344,559,892x** |
-| Single-qubit marginals | `P(1) = 0.5` for all 50 qubits |
-| QSC round trip | exact and byte-stable |
-| Receipt accepted | yes |
-
-The two GHZ support amplitudes were recorded as approximately `0.7071067812 + 0j`; the other deterministic probe locations were zero. The QSC commitment before and after reconstruction was identical.
-
-The receipt digest for that run is:
-
-```text
-af5e0c39d14ef70b64d4b55c40bace31da5dee4d82e493e7d52a176e3414c6f1
-```
-
-This is a structured GHZ result, not a claim that arbitrary 50-qubit circuits remain sparse or obtain the same reduction. QSec reports the actual representation and resource evidence for each run.
-
-The workflow uploads the full JSON receipt as the `qsa-0.2-evidence` artifact.
-
-## QSec 0.3: Cross-Code Quantum Core
-
-QSec 0.3 established the independent law-core path that remains part of 0.4.
-
-The default route uses:
+The default cross-code path uses:
 
 - an isolated Python dense-state worker;
-- an independent C++17 dense-state worker;
+- an independent C++17 law worker with its own parser, gate engine, quantization, and SHA-256 implementation;
 - randomized worker order;
 - unanimous phase-sensitive witness comparison;
 - a durable SQLite replay guard.
 
-QSA can be added as a third isolated implementation. With QSec 0.4, the same `--qsa` option also requires the QSA structural evidence receipt to pass.
+QSA can be added as a third isolated implementation. It receives no replay database, route information, other worker results, or QSec policy authority.
 
-The workers communicate through `QSEC-QH/1`, a strict ASCII values-only protocol. It does not accept pickles, callbacks, shared-memory objects, code strings, shell commands, or plugin loading.
+Workers communicate through `QSEC-QH/1`, a strict ASCII values-only protocol. It does not accept pickles, callbacks, shared-memory objects, code strings, shell commands, or plugin loading.
 
-Each cross-code worker independently calculates:
+A relative-phase mutation changes the state witness even when computational-basis probabilities remain unchanged.
 
-- the authenticated request digest;
-- a phase-sensitive state commitment;
-- a probability commitment;
-- probability normalization;
-- a backend-independent consensus digest.
+## Earlier Security Layers
 
-Workers never return the full statevector to the application. A relative-phase mutation is detectable even when computational-basis probabilities are unchanged.
+QSec 0.1 and 0.2 established controls that remain active in 0.5:
 
-The mesh fails closed on timeout, malformed witness, worker failure, request mismatch, replay, or required-consensus failure.
-
-## Earlier Layers
-
-### QSec 0.1 Foundation
-
-The first layer established:
-
-- quantum-state physical validation;
-- exact circuit manifests and SHA-256 circuit identities;
+- physical validation for statevectors, density matrices, probability vectors, and Bloch vectors;
+- exact circuit manifests and SHA-256 identities;
 - T1/T2, detuning, readout, reset, gate-error, and measurement-drift checks;
 - entropy-source health checks;
 - post-quantum migration inventory;
-- SHA-256 or HMAC-SHA-256 chained evidence records;
-- the initial QSec threat taxonomy.
-
-### QSec 0.2 Trust Mesh
-
-The second layer added:
-
+- chained SHA-256 or HMAC-SHA-256 evidence;
 - authenticated software, model, compiler, backend, policy, and pulse artifacts;
 - exact pulse-schedule identity and physical-envelope checks;
 - binary-symplectic stabilizer-syndrome verification;
-- authenticated approval and exact-bound capability leases for automated actions;
+- authenticated approval and exactly bound capability leases;
 - calibrated first-law thermal telemetry;
-- deterministic incident reconstruction and chained evidence roots;
-- a 17-case controlled trust-mesh matrix.
+- deterministic incident reconstruction and chained evidence roots.
 
-QSec does not execute the protected action. It determines whether the requested capability may be issued.
+QSec does not execute the protected action. It decides whether the evidence is sufficient for a narrowly bound capability to be issued.
 
 ## Installation
 
@@ -198,7 +187,7 @@ Install QSec:
 python -m pip install -e .
 ```
 
-Build the independent C++ law worker:
+Build the independent native law worker:
 
 ```bash
 python tools/build_native_core.py --output build/qsec-law-core
@@ -210,18 +199,18 @@ Install QSA 0.2.0 when QSA evidence is required:
 python -m pip install "qubit-state-algebra @ git+https://github.com/R-D-BioTech-Alaska/QSA.git@v0.2.0"
 ```
 
-QSA remains an optional dependency. QSec's non-QSA controls do not require it.
+QSA remains optional. QSec's non-QSA controls do not require it.
 
-## Quantum Verification
+## Quantum Commands
 
-Run the independent Python/C++ mesh:
+Independent Python/C++ verification:
 
 ```bash
 qsec quantum verify examples/quantum_request.json \
   --native build/qsec-law-core
 ```
 
-Add QSA cross-code verification and the QSA 0.2 evidence receipt:
+Add QSA cross-code and structured evidence:
 
 ```bash
 qsec quantum verify examples/quantum_request.json \
@@ -229,16 +218,22 @@ qsec quantum verify examples/quantum_request.json \
   --qsa
 ```
 
-Run only the wider QSA evidence path:
+Run the 50-qubit structured-state evidence path:
 
 ```bash
 qsec quantum qsa-evidence examples/qsa50_ghz_request.json
 ```
 
-A custom QSA evidence policy can set minimum versions, ABI, state-memory and QSC limits, full-state threshold, and probe count:
+Run the 60-qubit nonce-bound Grover challenge:
 
 ```bash
-qsec quantum qsa-evidence request.json --policy qsa-policy.json
+qsec quantum qsa-grover examples/qsa60_grover_request.json
+```
+
+Run the 60-qubit nonce-bound Hamming-weight challenge:
+
+```bash
+qsec quantum qsa-symmetry examples/qsa60_symmetry_request.json
 ```
 
 Run the controlled cross-code matrix:
@@ -251,42 +246,14 @@ Exit code `0` means the active policy passed. Exit code `2` means the command fa
 
 ## Other Commands
 
-Inspect a system snapshot:
-
 ```bash
-qsec inspect examples/current_snapshot.json \
-  --baseline examples/baseline_snapshot.json \
-  --ledger qsec-ledger.jsonl
-```
-
-Verify physical state constraints:
-
-```bash
+qsec inspect examples/current_snapshot.json --baseline examples/baseline_snapshot.json --ledger qsec-ledger.jsonl
 qsec verify-state examples/statevector.json
-```
-
-Compare circuit identity and policy:
-
-```bash
 qsec compare-circuit trusted-circuit.json current-circuit.json
-```
-
-Audit a source or configuration tree for cryptographic migration:
-
-```bash
 qsec audit-crypto path/to/project
-```
-
-Assess captured raw entropy:
-
-```bash
 qsec entropy entropy-sample.bin
-```
-
-Verify an evidence ledger:
-
-```bash
 qsec ledger verify qsec-ledger.jsonl
+qsec threats
 ```
 
 Trust-mesh controls:
@@ -300,46 +267,39 @@ qsec thermal inspect examples/thermal_telemetry.json --policy examples/thermal_p
 qsec scenarios
 ```
 
-Print the machine-readable threat taxonomy:
-
-```bash
-qsec threats
-```
-
 ## Security Model
 
 QSec separates evidence by trust plane because different failures require different proof.
 
-1. **Identity:** Is this the backend, compiler, runtime, model, worker, or device that was approved?
-2. **Authorization:** Is this exact request allowed under this exact policy and parent evidence state?
+1. **Identity:** Is this the runtime, backend, compiler, model, worker, or device that was approved?
+2. **Authorization:** Is this exact request allowed under this policy and parent evidence state?
 3. **Execution:** Did the approved circuit, operation sequence, or control schedule execute?
-4. **Quantum state:** Is the result physically valid, structurally consistent, and bound to the requested calculation?
-5. **Cross-code agreement:** Do independent implementations produce the same phase-sensitive result where independent reconstruction is feasible?
-6. **Runtime structure:** Did QSA remain within the representation and resource envelope QSec expected?
+4. **Quantum state:** Is the result physically valid and bound to the requested calculation?
+5. **Independent agreement:** Do separate implementations produce the same phase-sensitive result where full reconstruction is feasible?
+6. **Structured execution:** Did the runtime remain inside an exact representation contract whose result QSec can independently challenge?
 7. **Calibration:** Did coherence, detuning, reset, readout, pulse, or gate behavior move outside baseline?
-8. **Entropy:** Is a randomness source behaving inside its measured health envelope?
+8. **Entropy:** Is the randomness source behaving inside its measured health envelope?
 9. **Cryptography:** Which assets still depend on quantum-vulnerable key exchange or signatures?
-10. **Evidence:** Can the complete observation history be replayed without silently accepting altered records?
+10. **Evidence:** Can the observation history be verified without silently accepting altered records?
 
 An anomaly is first recorded as a disturbance. Promotion to breach, compromise, or collapse requires stronger evidence and explicit response policy.
 
 ## Important Boundaries
 
 - QSec does not invent replacement cryptographic primitives. Standard algorithms still provide signatures, key establishment, and hardware identity.
-- QSA provides quantum execution evidence; it does not receive QSec policy authority, replay state, or authorization authority.
-- The 12-qubit cross-code path independently reconstructs the bounded state. The wider QSA evidence path does not claim independent reconstruction of an arbitrary 64-qubit state.
-- Deterministic amplitude probes are exact checks of selected amplitudes and QSC round-trip behavior. They are not a proof of every unobserved amplitude.
-- QSA 0.2 includes broader exact structural systems such as tensor, stabilizer, phase, Pauli, and exact execution-broker routes. QSec 0.4 does not yet claim security receipts for every one of those specialized routes.
-- Process isolation blocks ordinary imports and object access. It does not stop a compromised host kernel, malicious compiler, equal-privilege debugger, or hardware memory observer.
-- High-risk deployments should place the law core and evidence roots in measured or independently controlled hardware boundaries.
+- QSA provides execution evidence. It does not receive QSec policy, replay, or authorization authority.
+- The 12-qubit cross-code path independently reconstructs bounded states. The wider structured route does not claim independent reconstruction of arbitrary 64-qubit states.
+- The Grover and Hamming-weight challenge routes are exact only inside their stated structural contracts. They do not compress arbitrary quantum states.
+- The 60-qubit demonstrations are exact classical simulations. They are not physical-QPU results or claims of hardware quantum advantage.
+- Process isolation blocks ordinary imports and object access. It does not defeat a compromised host kernel, equal-privilege debugger, malicious compiler, or hardware memory observer.
+- A local replay database or hash chain can be replaced by an attacker who controls the host. Strong deployments must anchor important state outside that host.
 - Entropy checks are online health indicators, not substitutes for a full entropy-source validation program.
 - The `T2 <= 2*T1` check is a consistency test for the stated Markovian relaxation model, not a universal law for every experiment.
-- A local hash chain or replay database can be replaced by an attacker who controls the host. Important roots must be signed, hardware-sealed, or anchored outside that host.
 - Controlled matrices are acceptance tests, not production detection-rate estimates.
 
 ## Validation
 
-Run the complete local suite:
+Run the local suite:
 
 ```bash
 python tools/build_native_core.py --output build/qsec-law-core
@@ -355,39 +315,40 @@ python tools/benchmark_trust_mesh.py
 python tools/benchmark_quantum_core.py --native build/qsec-law-core
 ```
 
-The QSec 0.3 cross-code matrix remains a regression gate for gate insertion, relative-phase injection, target substitution, initial-state substitution, worker disagreement, nonce replay, malformed protocol input, and clean Bell, GHZ, and rotation circuits.
+GitHub Actions validates Python 3.10, 3.11, and 3.12, rebuilds the standalone C++ law core, runs the regression and benchmark gates, installs the pinned QSA 0.2.0 release, and executes all three QSA evidence demonstrations.
 
-QSec 0.4 adds fail-closed tests for QSA version requirements, ABI requirements, memory policy, structured-width request bounds, QSC round-trip evidence, and preservation of the bounded cross-code state commitments.
+QSec 0.5 includes fail-closed tests for nonce variation, policy mismatch, package/native/ABI downgrade, resource limits, incorrect Grover probability, incorrect class amplitudes, challenge shape, membership, and QSA's documented structured-engine width boundaries.
 
-## Current QSA Integration Boundary
+## QSA Integration Frontier
 
-QSA 0.2 is substantially broader than the old QSec adapter. Its exact runtime can preserve structure through adaptive registers, stabilizer states, phase graphs, sparse Pauli propagation, tensor contractions, reusable estimators, and exact gradients.
+QSA 0.2 is broader than the surfaces QSec currently authenticates. It includes adaptive registers, exact symmetry algebra, stabilizer execution, phase structure, bounded tensor contraction, causal Pauli propagation, estimators, gradients, and an exact execution broker.
 
-QSec 0.4 takes the first security-focused step into that runtime: it records adaptive `QRegister`/`OperationPlan` execution and QSC evidence without forcing a dense statevector.
+QSec 0.5 now has explicit security receipts for adaptive structured-state evidence, exact two-class Grover search, and exact Hamming-weight symmetry.
 
-The next QSA integration should expose QSA's exact execution-route receipt directly to QSec: selected route, structural eligibility, fallback reason, contraction or Pauli bounds, and exact query result. That will allow QSec policy to distinguish "QSA returned a valid answer" from "QSA returned this exact answer through this certified exact route under these resource bounds."
+The next high-value integration is QSA's exact execution broker once its route receipt is exposed through a callable interface. QSec should then bind selected route, structural eligibility, fallback reason, contraction or Pauli bounds, exact query result, runtime identity, request, and policy into the same evidence model.
+
+## Development Direction
+
+The next evidence-bearing layers are:
+
+1. hardware-rooted signing, measured boot, and externally anchored replay/evidence roots;
+2. host filesystem, process, memory, network, and persistence containment;
+3. captured hardware pulse traces and independently sealed calibration evidence;
+4. authenticated QSA exact-route receipts and fallback evidence;
+5. remote Bell-pair and correlation challenge protocols;
+6. fault-injection and error-correction datasets beyond deterministic witnesses;
+7. AI memory, training-data, tool-output, and action-result receipts with rollback;
+8. adversarial datasets with matched benign variation and sealed false-positive evaluation.
+
+Every layer must report what it detects, what it does not detect, runtime cost, false-positive cost, and the evidence required before a disturbance is promoted.
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Quantum Core](docs/QUANTUM_CORE.md)
 - [QSec 0.2 Trust Mesh](docs/TRUST_MESH.md)
-- [QSec 0.3 Cross-Code Quantum Core](docs/QUANTUM_CORE.md)
 - [Threat Taxonomy](docs/THREAT_TAXONOMY.md)
 - [Security Boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Post-Quantum Transition](docs/CRYPTOGRAPHIC_TRANSITION.md)
 
-## Project Direction
-
-The next evidence-bearing layers are:
-
-1. direct QSA exact-route, fallback, tensor-width, and Pauli-growth receipts;
-2. hardware-rooted signing and measured-boot receipts;
-3. host filesystem, process, memory, network, and persistence containment;
-4. captured hardware pulse traces and independently sealed calibration evidence;
-5. persistent law-core services with hidden challenge state and one-way capability channels;
-6. remote Bell-pair and correlation challenge protocols;
-7. fault-injection and error-correction datasets beyond deterministic witnesses;
-8. AI memory, training-data, tool-output, and action-result receipts with rollback;
-9. adversarial datasets with matched benign variation and sealed false-positive evaluation.
-
-Every layer must report what it detects, what it cannot detect, runtime cost, false-positive cost, and the evidence required before a disturbance is promoted.
+QSec is open source under the MIT License.
