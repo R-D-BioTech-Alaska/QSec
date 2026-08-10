@@ -69,6 +69,21 @@ class FakeState:
         pass
 
 
+class UnstableState(FakeState):
+    def __init__(self, qubits: int, restored: bool = False) -> None:
+        super().__init__(qubits)
+        self.restored = restored
+
+    def encode_qsc(self) -> bytes:
+        suffix = ":restored" if self.restored else ""
+        return f"fake-qsc:{self.qubits}{suffix}".encode("ascii")
+
+    @classmethod
+    def decode_qsc(cls, payload: bytes) -> "UnstableState":
+        qubits = int(payload.decode("ascii").split(":", 2)[1])
+        return cls(qubits, restored=True)
+
+
 class QSAEvidenceTests(unittest.TestCase):
     def request(self, qubits: int) -> QSAEvidenceRequest:
         gates = [QuantumGate("H", 0)]
@@ -97,6 +112,7 @@ class QSAEvidenceTests(unittest.TestCase):
         self.assertTrue(receipt.accepted)
         self.assertTrue(receipt.validated)
         self.assertTrue(receipt.roundtrip_equivalent)
+        self.assertTrue(receipt.qsc_byte_stable)
         self.assertEqual(receipt.component_kinds, {"sparse": 50})
         self.assertEqual(receipt.dense_statevector_bytes, 16 * (1 << 50))
         self.assertGreater(receipt.dense_reduction, 1_000_000_000)
@@ -109,6 +125,15 @@ class QSAEvidenceTests(unittest.TestCase):
         self.assertTrue(receipt.accepted)
         self.assertIsNotNone(receipt.state_digest)
         self.assertIsNotNone(receipt.probability_digest)
+
+    def test_qsc_byte_change_fails_closed(self) -> None:
+        module = self.qsa_module()
+        module.QubitRegister = UnstableState
+        with patch.dict(sys.modules, {"qsa": module}):
+            receipt = collect_qsa_evidence(self.request(20))
+        self.assertFalse(receipt.accepted)
+        self.assertFalse(receipt.qsc_byte_stable)
+        self.assertIn("QSC_ROUNDTRIP", receipt.failures)
 
     def test_version_and_resource_policy_fail_closed(self) -> None:
         policy = QSAEvidencePolicy(max_estimated_bytes=1024)
