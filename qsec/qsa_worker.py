@@ -12,6 +12,7 @@ if str(PACKAGE_ROOT) not in sys.path:
 from qsec.qsa_adapter import execute_with_qsa
 from qsec.qsa_evidence import QSAEvidencePolicy, QSAEvidenceRequest, collect_qsa_evidence
 from qsec.qsa_grover import QSAGroverPolicy, QSAGroverRequest, collect_qsa_grover
+from qsec.qsa_symmetry import QSASymmetryPolicy, QSASymmetryRequest, collect_qsa_symmetry
 from qsec.quantum_core import QuantumProtocolError, QuantumRequest
 
 
@@ -48,12 +49,25 @@ def _grover() -> int:
     return 0 if receipt.accepted else 2
 
 
+def _symmetry() -> int:
+    request, policy = _payload()
+    receipt = collect_qsa_symmetry(
+        QSASymmetryRequest.from_dict(request),
+        QSASymmetryPolicy.from_dict(policy),
+    )
+    sys.stdout.write(json.dumps(receipt.to_dict(), sort_keys=True, separators=(",", ":")) + "\n")
+    sys.stdout.flush()
+    return 0 if receipt.accepted else 2
+
+
 def main() -> int:
     try:
         if sys.argv[1:] == ["--evidence"]:
             return _evidence()
         if sys.argv[1:] == ["--grover"]:
             return _grover()
+        if sys.argv[1:] == ["--symmetry"]:
+            return _symmetry()
         request = QuantumRequest.decode(sys.stdin.buffer.read())
         sys.stdout.buffer.write(execute_with_qsa(request).encode())
         sys.stdout.buffer.flush()
