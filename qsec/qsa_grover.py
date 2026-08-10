@@ -45,9 +45,11 @@ def _reference(qubits: int, marked_count: int, iterations: int) -> tuple[float, 
     space = 1 << qubits
     theta = math.asin(math.sqrt(marked_count / space))
     angle = (2 * iterations + 1) * theta
-    marked = complex(math.sin(angle) / math.sqrt(marked_count), 0.0)
-    unmarked = complex(math.cos(angle) / math.sqrt(space - marked_count), 0.0)
-    return math.sin(angle) ** 2, marked, unmarked
+    return (
+        math.sin(angle) ** 2,
+        complex(math.sin(angle) / math.sqrt(marked_count), 0.0),
+        complex(math.cos(angle) / math.sqrt(space - marked_count), 0.0),
+    )
 
 
 def _optimal_iterations(qubits: int, marked_count: int) -> int:
@@ -57,10 +59,7 @@ def _optimal_iterations(qubits: int, marked_count: int) -> int:
         return 0
     lower = int(math.floor(ideal))
     upper = lower + 1
-
-    def probability(count: int) -> float:
-        return math.sin((2 * count + 1) * theta) ** 2
-
+    probability = lambda count: math.sin((2 * count + 1) * theta) ** 2
     return upper if probability(upper) > probability(lower) else lower
 
 
@@ -125,7 +124,6 @@ class QSAGroverRequest:
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> "QSAGroverRequest":
         raw_iterations = data.get("iterations", "optimal")
-        iterations = None if str(raw_iterations).strip().lower() == "optimal" else int(raw_iterations)
         return cls(
             request_id=str(data.get("request_id", "")),
             nonce=str(data.get("nonce", "")),
@@ -133,11 +131,12 @@ class QSAGroverRequest:
             parent_digest=str(data.get("parent_digest", "-")),
             qubits=int(data.get("qubits", 0)),
             marked_count=int(data.get("marked_count", 0)),
-            iterations=iterations,
+            iterations=None if str(raw_iterations).strip().lower() == "optimal" else int(raw_iterations),
         )
 
     def to_dict(self) -> dict[str, object]:
         return {
+            "kind": "QSEC-QSA-GROVER/1",
             "request_id": self.request_id,
             "nonce": self.nonce,
             "policy_digest": self.policy_digest,
@@ -185,6 +184,7 @@ class QSAGroverPolicy:
 
     def to_dict(self) -> dict[str, object]:
         return {
+            "kind": "QSEC-QSA-GROVER-POLICY/1",
             "min_package_version": self.min_package_version,
             "min_native_version": self.min_native_version,
             "min_abi_version": list(self.min_abi_version),
@@ -278,8 +278,8 @@ class QSAGroverReceipt:
 
     @classmethod
     def create(cls, **values: object) -> "QSAGroverReceipt":
-        placeholder = cls(receipt_digest="0" * 64, **values)
-        digest = hashlib.sha256(_canonical(placeholder._body())).hexdigest()
+        receipt = cls(receipt_digest="0" * 64, **values)
+        digest = hashlib.sha256(_canonical(receipt._body())).hexdigest()
         return cls(receipt_digest=digest, **values)
 
     @classmethod
@@ -296,51 +296,20 @@ class QSAGroverReceipt:
         values["marked_probe"] = int(data.get("marked_probe", 0))
         values["unmarked_probe"] = int(data.get("unmarked_probe", 0))
         values["failures"] = tuple(str(value) for value in failures)
-        receipt = cls(receipt_digest=_hex64(str(data.get("receipt_digest", "")), "receipt_digest"), **values)
-        expected = hashlib.sha256(_canonical(receipt._body())).hexdigest()
-        if receipt.receipt_digest != expected:
+        receipt = cls(
+            receipt_digest=_hex64(str(data.get("receipt_digest", "")), "receipt_digest"),
+            **values,
+        )
+        if receipt.receipt_digest != hashlib.sha256(_canonical(receipt._body())).hexdigest():
             raise ValueError("QSA Grover receipt digest mismatch")
         return receipt
 
 
-def _verify_receipt(
+def _expected_failures(
     request: QSAGroverRequest,
     policy: QSAGroverPolicy,
     receipt: QSAGroverReceipt,
-) -> None:
-    marked_indices = _challenge_indices(request)
-    marked_set = set(marked_indices)
-    unmarked_probe = _unmarked_probe(request, marked_set)
-    challenge_digest = hashlib.sha256(
-        ",".join(str(value) for value in marked_indices).encode("ascii")
-    ).hexdigest()
-    expected_optimal = _optimal_iterations(request.qubits, request.marked_count)
-    iterations = expected_optimal if request.iterations is None else request.iterations
-    reference_probability, reference_marked, reference_unmarked = _reference(
-        request.qubits, request.marked_count, iterations
-    )
-    expected = {
-        "qubits": request.qubits,
-        "logical_states": 1 << request.qubits,
-        "marked_count": request.marked_count,
-        "challenge_digest": challenge_digest,
-        "marked_probe": marked_indices[0],
-        "unmarked_probe": unmarked_probe,
-        "iterations": iterations,
-        "reference_optimal_iterations": expected_optimal,
-        "dense_statevector_bytes": 16 * (1 << request.qubits),
-        "reference_probability_scaled": _scaled(reference_probability),
-        "reference_marked_real_scaled": _scaled(reference_marked.real),
-        "reference_unmarked_real_scaled": _scaled(reference_unmarked.real),
-    }
-    for field, value in expected.items():
-        if getattr(receipt, field) != value:
-            raise ValueError(f"QSA Grover receipt {field} mismatch")
-    if receipt.optimal_iterations != expected_optimal:
-        raise ValueError("QSA Grover receipt optimal iteration mismatch")
-    if receipt.dense_reduction != receipt.dense_statevector_bytes // max(1, receipt.estimated_bytes):
-        raise ValueError("QSA Grover receipt reduction mismatch")
-
+) -> tuple[str, ...]:
     failures: list[str] = []
     if request.policy_digest not in {"-", policy.digest}:
         failures.append("POLICY_DIGEST")
@@ -356,30 +325,65 @@ def _verify_receipt(
         failures.append("CHALLENGE_MEMBERSHIP")
     if receipt.estimated_bytes > policy.max_estimated_bytes:
         failures.append("STATE_MEMORY_LIMIT")
-    probability_error = abs(receipt.success_probability_scaled - receipt.reference_probability_scaled)
-    if abs(receipt.probability_error_scaled - probability_error) > 1:
-        raise ValueError("QSA Grover receipt probability error mismatch")
-    if probability_error > policy.tolerance_scaled:
+    if abs(receipt.success_probability_scaled - receipt.reference_probability_scaled) > policy.tolerance_scaled:
         failures.append("PROBABILITY_MISMATCH")
-    marked_error = abs(receipt.marked_amplitude_real_scaled - receipt.reference_marked_real_scaled)
-    unmarked_error = abs(receipt.unmarked_amplitude_real_scaled - receipt.reference_unmarked_real_scaled)
-    if max(marked_error, unmarked_error, abs(receipt.marked_amplitude_imag_scaled), abs(receipt.unmarked_amplitude_imag_scaled)) > policy.tolerance_scaled:
+    amplitude_error = max(
+        abs(receipt.marked_amplitude_real_scaled - receipt.reference_marked_real_scaled),
+        abs(receipt.unmarked_amplitude_real_scaled - receipt.reference_unmarked_real_scaled),
+        abs(receipt.marked_amplitude_imag_scaled),
+        abs(receipt.unmarked_amplitude_imag_scaled),
+    )
+    if amplitude_error > policy.tolerance_scaled:
         failures.append("AMPLITUDE_MISMATCH")
-    marked_probe_error = max(
+    probe_error = max(
         abs(receipt.marked_probe_real_scaled - receipt.marked_amplitude_real_scaled),
         abs(receipt.marked_probe_imag_scaled - receipt.marked_amplitude_imag_scaled),
-    )
-    unmarked_probe_error = max(
         abs(receipt.unmarked_probe_real_scaled - receipt.unmarked_amplitude_real_scaled),
         abs(receipt.unmarked_probe_imag_scaled - receipt.unmarked_amplitude_imag_scaled),
     )
-    if max(marked_probe_error, unmarked_probe_error) > policy.tolerance_scaled:
+    if probe_error > policy.tolerance_scaled:
         failures.append("CHALLENGE_MEMBERSHIP")
+    return tuple(dict.fromkeys(failures))
 
-    expected_failures = tuple(dict.fromkeys(failures))
-    if receipt.failures != expected_failures:
+
+def _verify_receipt(request: QSAGroverRequest, policy: QSAGroverPolicy, receipt: QSAGroverReceipt) -> None:
+    marked = _challenge_indices(request)
+    unmarked = _unmarked_probe(request, set(marked))
+    challenge_digest = hashlib.sha256(
+        ",".join(str(value) for value in marked).encode("ascii")
+    ).hexdigest()
+    optimal = _optimal_iterations(request.qubits, request.marked_count)
+    iterations = optimal if request.iterations is None else request.iterations
+    probability, marked_amplitude, unmarked_amplitude = _reference(
+        request.qubits, request.marked_count, iterations
+    )
+    expected = {
+        "qubits": request.qubits,
+        "logical_states": 1 << request.qubits,
+        "marked_count": request.marked_count,
+        "challenge_digest": challenge_digest,
+        "marked_probe": marked[0],
+        "unmarked_probe": unmarked,
+        "iterations": iterations,
+        "optimal_iterations": optimal,
+        "reference_optimal_iterations": optimal,
+        "dense_statevector_bytes": 16 * (1 << request.qubits),
+        "reference_probability_scaled": _scaled(probability),
+        "reference_marked_real_scaled": _scaled(marked_amplitude.real),
+        "reference_unmarked_real_scaled": _scaled(unmarked_amplitude.real),
+    }
+    for field, value in expected.items():
+        if getattr(receipt, field) != value:
+            raise ValueError(f"QSA Grover receipt {field} mismatch")
+    if receipt.dense_reduction != receipt.dense_statevector_bytes // max(1, receipt.estimated_bytes):
+        raise ValueError("QSA Grover receipt reduction mismatch")
+    probability_error = abs(receipt.success_probability_scaled - receipt.reference_probability_scaled)
+    if abs(receipt.probability_error_scaled - probability_error) > 1:
+        raise ValueError("QSA Grover receipt probability error mismatch")
+    failures = _expected_failures(request, policy, receipt)
+    if receipt.failures != failures:
         raise ValueError("QSA Grover receipt failure set mismatch")
-    if receipt.accepted != (not expected_failures):
+    if receipt.accepted != (not failures):
         raise ValueError("QSA Grover receipt acceptance mismatch")
 
 
@@ -400,95 +404,52 @@ def collect_qsa_grover(
         package_version = str(getattr(qsa, "__version__", "unknown"))
         native_version = str(identity.native_version)
         abi_version = tuple(int(value) for value in identity.abi_version)
-        marked_indices = _challenge_indices(request)
-        marked_set = set(marked_indices)
-        unmarked_probe = _unmarked_probe(request, marked_set)
+        marked = _challenge_indices(request)
+        unmarked = _unmarked_probe(request, set(marked))
         challenge_digest = hashlib.sha256(
-            ",".join(str(value) for value in marked_indices).encode("ascii")
+            ",".join(str(value) for value in marked).encode("ascii")
         ).hexdigest()
 
-        search = GroverSearch(request.qubits, marked_indices)
+        search = GroverSearch(request.qubits, marked)
         qsa_optimal = int(search.optimal_iterations)
         reference_optimal = _optimal_iterations(request.qubits, request.marked_count)
         iterations = qsa_optimal if request.iterations is None else request.iterations
-        if request.iterations is None:
-            search.run_optimal()
-        else:
-            search.iterate(iterations)
+        search.run_optimal() if request.iterations is None else search.iterate(iterations)
 
-        validated = bool(search.validate())
-        actual_qubits = int(search.qubit_count)
-        actual_space = int(search.space_size)
-        actual_marked = int(search.marked_count)
-        actual_iterations = int(search.iteration_count)
-        explicit_marked = bool(search.has_explicit_marked_indices)
         probability = float(search.success_probability)
         marked_amplitude = complex(search.marked_amplitude)
         unmarked_amplitude = complex(search.unmarked_amplitude)
-        marked_probe_amplitude = complex(search.amplitude(marked_indices[0]))
-        unmarked_probe_amplitude = complex(search.amplitude(unmarked_probe))
+        marked_probe_amplitude = complex(search.amplitude(marked[0]))
+        unmarked_probe_amplitude = complex(search.amplitude(unmarked))
         reference_probability, reference_marked, reference_unmarked = _reference(
             request.qubits, request.marked_count, iterations
         )
-        probability_error = abs(probability - reference_probability)
-        marked_error = abs(marked_amplitude - reference_marked)
-        unmarked_error = abs(unmarked_amplitude - reference_unmarked)
-        marked_probe_error = abs(marked_probe_amplitude - marked_amplitude)
-        unmarked_probe_error = abs(unmarked_probe_amplitude - unmarked_amplitude)
         estimated_bytes = int(search.estimated_bytes)
-
-        failures: list[str] = []
-        if request.policy_digest not in {"-", policy.digest}:
-            failures.append("POLICY_DIGEST")
-        if _version(package_version) < _version(policy.min_package_version):
-            failures.append("QSA_PACKAGE_VERSION")
-        if _version(native_version) < _version(policy.min_native_version):
-            failures.append("QSA_NATIVE_VERSION")
-        if abi_version < policy.min_abi_version:
-            failures.append("QSA_ABI_VERSION")
-        if not validated:
-            failures.append("QSA_VALIDATE")
-        if not explicit_marked:
-            failures.append("CHALLENGE_MEMBERSHIP")
-        if actual_qubits != request.qubits or actual_space != (1 << request.qubits) or actual_marked != request.marked_count:
-            failures.append("CHALLENGE_SHAPE")
-        if actual_iterations != iterations:
-            failures.append("ITERATION_COUNT")
-        if qsa_optimal != reference_optimal:
-            failures.append("OPTIMAL_ITERATION_MISMATCH")
-        if estimated_bytes > policy.max_estimated_bytes:
-            failures.append("STATE_MEMORY_LIMIT")
-        if _scaled(probability_error) > policy.tolerance_scaled:
-            failures.append("PROBABILITY_MISMATCH")
-        if max(_scaled(marked_error), _scaled(unmarked_error)) > policy.tolerance_scaled:
-            failures.append("AMPLITUDE_MISMATCH")
-        if max(_scaled(marked_probe_error), _scaled(unmarked_probe_error)) > policy.tolerance_scaled:
-            failures.append("CHALLENGE_MEMBERSHIP")
-
         dense_bytes = 16 * (1 << request.qubits)
-        return QSAGroverReceipt.create(
-            accepted=not failures,
+
+        provisional = QSAGroverReceipt.create(
+            accepted=True,
             request_digest=request.digest,
             package_version=package_version,
             native_version=native_version,
             abi_version=abi_version,
-            qubits=actual_qubits,
-            logical_states=actual_space,
-            marked_count=actual_marked,
+            qubits=int(search.qubit_count),
+            logical_states=int(search.space_size),
+            marked_count=int(search.marked_count),
             challenge_digest=challenge_digest,
-            marked_probe=marked_indices[0],
-            unmarked_probe=unmarked_probe,
-            iterations=actual_iterations,
+            marked_probe=marked[0],
+            unmarked_probe=unmarked,
+            iterations=int(search.iteration_count),
             optimal_iterations=qsa_optimal,
             reference_optimal_iterations=reference_optimal,
-            validated=validated,
-            explicit_marked_indices=explicit_marked,
+            validated=bool(search.validate()),
+            explicit_marked_indices=bool(search.has_explicit_marked_indices),
             estimated_bytes=estimated_bytes,
             dense_statevector_bytes=dense_bytes,
             dense_reduction=dense_bytes // max(1, estimated_bytes),
             success_probability_scaled=_scaled(probability),
             reference_probability_scaled=_scaled(reference_probability),
-            probability_error_scaled=_scaled(probability_error),
+            probability_error_scaled=_scaled(abs(probability - reference_probability)),
             marked_amplitude_real_scaled=_scaled(marked_amplitude.real),
             marked_amplitude_imag_scaled=_scaled(marked_amplitude.imag),
             reference_marked_real_scaled=_scaled(reference_marked.real),
@@ -499,8 +460,23 @@ def collect_qsa_grover(
             marked_probe_imag_scaled=_scaled(marked_probe_amplitude.imag),
             unmarked_probe_real_scaled=_scaled(unmarked_probe_amplitude.real),
             unmarked_probe_imag_scaled=_scaled(unmarked_probe_amplitude.imag),
-            failures=tuple(dict.fromkeys(failures)),
+            failures=(),
         )
+
+        failures: list[str] = list(_expected_failures(request, policy, provisional))
+        if provisional.qubits != request.qubits or provisional.logical_states != (1 << request.qubits) or provisional.marked_count != request.marked_count:
+            failures.append("CHALLENGE_SHAPE")
+        if provisional.iterations != iterations:
+            failures.append("ITERATION_COUNT")
+        if qsa_optimal != reference_optimal:
+            failures.append("OPTIMAL_ITERATION_MISMATCH")
+        failures = list(dict.fromkeys(failures))
+        if not failures:
+            return provisional
+        body = provisional._body()
+        body["accepted"] = False
+        body["failures"] = tuple(failures)
+        return QSAGroverReceipt.create(**body)
     finally:
         if search is not None:
             search.close()
@@ -531,10 +507,9 @@ def run_qsa_grover(
     ):
         if key in os.environ:
             environment[key] = os.environ[key]
-    payload = _canonical({"request": request.to_dict(), "policy": policy.to_dict()})
     completed = subprocess.run(
         (sys.executable, "-I", "-B", str(worker), "--grover"),
-        input=payload,
+        input=_canonical({"request": request.to_dict(), "policy": policy.to_dict()}),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
