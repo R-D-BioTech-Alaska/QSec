@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .qsa_evidence import QSAEvidencePolicy, QSAEvidenceRequest, run_qsa_evidence
+from .qsa_grover import QSAGroverPolicy, QSAGroverRequest, run_qsa_grover
 from .quantum_core import QuantumRequest
 from .quantum_hopper import HopperMesh, QuantumReplayGuard, native_worker, python_worker, qsa_worker
 from .quantum_scenarios import run_quantum_scenarios, summarize_quantum_scenarios
@@ -30,6 +31,14 @@ def _load_qsa_request(path: str | Path) -> QSAEvidenceRequest:
 
 def _load_qsa_policy(path: str | Path | None) -> QSAEvidencePolicy:
     return QSAEvidencePolicy() if path is None else QSAEvidencePolicy.from_dict(_load_object(path))
+
+
+def _load_grover_request(path: str | Path) -> QSAGroverRequest:
+    return QSAGroverRequest.from_dict(_load_object(path))
+
+
+def _load_grover_policy(path: str | Path | None) -> QSAGroverPolicy:
+    return QSAGroverPolicy() if path is None else QSAGroverPolicy.from_dict(_load_object(path))
 
 
 def _default_native() -> Path | None:
@@ -84,6 +93,19 @@ def command_qsa_evidence(args: argparse.Namespace) -> int:
     return 0 if receipt.accepted else 2
 
 
+def command_qsa_grover(args: argparse.Namespace) -> int:
+    request = _load_grover_request(args.request)
+    if not args.no_replay_guard:
+        QuantumReplayGuard(args.replay_db).consume(request)
+    receipt = run_qsa_grover(
+        request,
+        _load_grover_policy(args.policy),
+        timeout_seconds=args.timeout,
+    )
+    print(json.dumps(receipt.to_dict(), indent=2, sort_keys=True))
+    return 0 if receipt.accepted else 2
+
+
 def command_quantum_scenarios(args: argparse.Namespace) -> int:
     native_path = Path(args.native) if args.native else _default_native()
     if native_path is None:
@@ -120,6 +142,17 @@ def register_quantum_subcommands(subparsers: argparse._SubParsersAction) -> None
     evidence.add_argument("--policy", help="QSA evidence policy JSON")
     evidence.add_argument("--timeout", type=float, default=30.0)
     evidence.set_defaults(function=command_qsa_evidence)
+
+    grover = quantum_subparsers.add_parser(
+        "qsa-grover",
+        help="Run a nonce-bound QSA Grover capability challenge",
+    )
+    grover.add_argument("request")
+    grover.add_argument("--policy", help="QSA Grover policy JSON")
+    grover.add_argument("--timeout", type=float, default=30.0)
+    grover.add_argument("--replay-db", default="qsec-grover-nonces.sqlite3")
+    grover.add_argument("--no-replay-guard", action="store_true")
+    grover.set_defaults(function=command_qsa_grover)
 
     scenarios = quantum_subparsers.add_parser(
         "scenarios",
