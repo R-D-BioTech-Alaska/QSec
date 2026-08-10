@@ -434,9 +434,11 @@ def collect_qsa_evidence(
         restored_valid = bool(restored.validate())
         restored_qsc = restored.encode_qsc()
         roundtrip_digest = hashlib.sha256(restored_qsc).hexdigest()
+        qsc_byte_stable = qsc_digest == roundtrip_digest
         restored_probes, restored_marginal_digest, _, _ = _probe_state(restored, request, indices)
         roundtrip_equivalent = (
             restored_valid
+            and qsc_byte_stable
             and restored_probes == probes
             and restored_marginal_digest == marginal_digest
         )
@@ -487,7 +489,7 @@ def collect_qsa_evidence(
             qsc_bytes=qsc_bytes,
             qsc_digest=qsc_digest,
             qsc_roundtrip_digest=roundtrip_digest,
-            qsc_byte_stable=qsc_digest == roundtrip_digest,
+            qsc_byte_stable=qsc_byte_stable,
             roundtrip_equivalent=roundtrip_equivalent,
             marginal_digest=marginal_digest,
             marginal_min_scaled=marginal_min,
@@ -551,4 +553,8 @@ def run_qsa_evidence(
     receipt = QSAEvidenceReceipt.from_dict(data)
     if receipt.request_digest != request.digest:
         raise ValueError("QSA evidence worker returned a receipt for a different request")
+    if completed.returncode not in {0, 2}:
+        raise ValueError(f"QSA evidence worker exited with status {completed.returncode}")
+    if (completed.returncode == 0) != receipt.accepted:
+        raise ValueError("QSA evidence worker status does not match its receipt")
     return receipt
