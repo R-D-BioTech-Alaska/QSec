@@ -31,7 +31,7 @@ def _hex64(value: str, field: str, *, allow_dash: bool = False) -> str:
 def _version(value: str) -> tuple[int, int, int]:
     parts = [int(item) for item in re.findall(r"\d+", str(value))[:3]]
     parts.extend([0] * (3 - len(parts)))
-    return tuple(parts)  # type: ignore[return-value]
+    return parts[0], parts[1], parts[2]
 
 
 def _scaled(value: float) -> int:
@@ -213,7 +213,10 @@ class QSAEvidencePolicy:
     probe_count: int = 12
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "min_abi_version", tuple(int(value) for value in self.min_abi_version))
+        abi = tuple(int(value) for value in self.min_abi_version)
+        if len(abi) != 3:
+            raise ValueError("min_abi_version must contain three integers")
+        object.__setattr__(self, "min_abi_version", abi)
         for name in ("max_estimated_bytes", "max_qsc_bytes", "full_state_qubits", "probe_count"):
             value = int(getattr(self, name))
             if value < 1:
@@ -228,7 +231,7 @@ class QSAEvidencePolicy:
         return cls(
             min_package_version=str(data.get("min_package_version", "0.2.0")),
             min_native_version=str(data.get("min_native_version", "0.2.0")),
-            min_abi_version=tuple(int(value) for value in abi),
+            min_abi_version=(int(abi[0]), int(abi[1]), int(abi[2])),
             max_estimated_bytes=int(data.get("max_estimated_bytes", 268_435_456)),
             max_qsc_bytes=int(data.get("max_qsc_bytes", 268_435_456)),
             full_state_qubits=int(data.get("full_state_qubits", 12)),
@@ -322,21 +325,32 @@ class QSAEvidenceReceipt:
 
     @classmethod
     def create(cls, **values: object) -> "QSAEvidenceReceipt":
-        placeholder = cls(receipt_digest="0" * 64, **values)  # type: ignore[arg-type]
+        placeholder = cls(receipt_digest="0" * 64, **values)
         digest = hashlib.sha256(_canonical(placeholder._body())).hexdigest()
-        return cls(receipt_digest=digest, **values)  # type: ignore[arg-type]
+        return cls(receipt_digest=digest, **values)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> "QSAEvidenceReceipt":
+        abi = data.get("abi_version", ())
         probes = data.get("probes", ())
+        failures = data.get("failures", ())
+        if not isinstance(abi, Sequence) or isinstance(abi, (str, bytes)) or len(abi) != 3:
+            raise ValueError("abi_version must contain three integers")
         if not isinstance(probes, Sequence) or isinstance(probes, (str, bytes)):
             raise ValueError("probes must be a list")
+        if not isinstance(failures, Sequence) or isinstance(failures, (str, bytes)):
+            raise ValueError("failures must be a list")
+        probe_values: list[dict[str, object]] = []
+        for value in probes:
+            if not isinstance(value, Mapping):
+                raise ValueError("every probe must be an object")
+            probe_values.append(dict(value))
         receipt = cls(
             accepted=bool(data.get("accepted", False)),
-            request_digest=str(data.get("request_digest", "")),
+            request_digest=_hex64(str(data.get("request_digest", "")), "request_digest"),
             package_version=str(data.get("package_version", "")),
             native_version=str(data.get("native_version", "")),
-            abi_version=tuple(int(value) for value in data.get("abi_version", (0, 0, 0))),  # type: ignore[arg-type]
+            abi_version=(int(abi[0]), int(abi[1]), int(abi[2])),
             qubits=int(data.get("qubits", 0)),
             gate_count=int(data.get("gate_count", 0)),
             operation_count=int(data.get("operation_count", 0)),
@@ -346,23 +360,23 @@ class QSAEvidenceReceipt:
             component_kinds={str(key): int(value) for key, value in dict(data.get("component_kinds", {})).items()},
             peak_component_size=int(data.get("peak_component_size", 0)),
             peak_component_nonzero=int(data.get("peak_component_nonzero", 0)),
-            structure_digest=str(data.get("structure_digest", "")),
+            structure_digest=_hex64(str(data.get("structure_digest", "")), "structure_digest"),
             estimated_bytes=int(data.get("estimated_bytes", 0)),
             dense_statevector_bytes=int(data.get("dense_statevector_bytes", 0)),
             dense_reduction=int(data.get("dense_reduction", 0)),
             qsc_bytes=int(data.get("qsc_bytes", 0)),
-            qsc_digest=str(data.get("qsc_digest", "")),
-            qsc_roundtrip_digest=str(data.get("qsc_roundtrip_digest", "")),
+            qsc_digest=_hex64(str(data.get("qsc_digest", "")), "qsc_digest"),
+            qsc_roundtrip_digest=_hex64(str(data.get("qsc_roundtrip_digest", "")), "qsc_roundtrip_digest"),
             qsc_byte_stable=bool(data.get("qsc_byte_stable", False)),
             roundtrip_equivalent=bool(data.get("roundtrip_equivalent", False)),
-            marginal_digest=str(data.get("marginal_digest", "")),
+            marginal_digest=_hex64(str(data.get("marginal_digest", "")), "marginal_digest"),
             marginal_min_scaled=int(data.get("marginal_min_scaled", 0)),
             marginal_max_scaled=int(data.get("marginal_max_scaled", 0)),
-            probes=tuple(dict(value) for value in probes),  # type: ignore[arg-type]
-            state_digest=None if data.get("state_digest") is None else str(data.get("state_digest")),
-            probability_digest=None if data.get("probability_digest") is None else str(data.get("probability_digest")),
-            failures=tuple(str(value) for value in data.get("failures", ())),  # type: ignore[arg-type]
-            receipt_digest=str(data.get("receipt_digest", "")),
+            probes=tuple(probe_values),
+            state_digest=None if data.get("state_digest") is None else _hex64(str(data.get("state_digest")), "state_digest"),
+            probability_digest=None if data.get("probability_digest") is None else _hex64(str(data.get("probability_digest")), "probability_digest"),
+            failures=tuple(str(value) for value in failures),
+            receipt_digest=_hex64(str(data.get("receipt_digest", "")), "receipt_digest"),
         )
         expected = hashlib.sha256(_canonical(receipt._body())).hexdigest()
         if receipt.receipt_digest != expected:
@@ -440,16 +454,12 @@ def collect_qsa_evidence(
                 request.gates,
             )
             amplitudes = [complex(state.amplitude(index)) for index in range(1 << request.qubits)]
-            restored_amplitudes = [
-                complex(restored.amplitude(index)) for index in range(1 << request.qubits)
-            ]
+            restored_amplitudes = [complex(restored.amplitude(index)) for index in range(1 << request.qubits)]
             original = witness_from_state(legacy_request, amplitudes, "qsa-native")
             replay = witness_from_state(legacy_request, restored_amplitudes, "qsa-native")
             state_digest = original.state_digest
             probability_digest = original.probability_digest
-            roundtrip_equivalent = (
-                roundtrip_equivalent and original.consensus_digest == replay.consensus_digest
-            )
+            roundtrip_equivalent = roundtrip_equivalent and original.consensus_digest == replay.consensus_digest
 
         if not roundtrip_equivalent:
             failures.append("QSC_ROUNDTRIP")
@@ -538,4 +548,7 @@ def run_qsa_evidence(
         raise ValueError("QSA evidence worker returned malformed output") from exc
     if not isinstance(data, Mapping):
         raise ValueError("QSA evidence worker returned a non-object receipt")
-    return QSAEvidenceReceipt.from_dict(data)
+    receipt = QSAEvidenceReceipt.from_dict(data)
+    if receipt.request_digest != request.digest:
+        raise ValueError("QSA evidence worker returned a receipt for a different request")
+    return receipt
