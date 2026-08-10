@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 from .qsa_evidence import QSAEvidencePolicy, QSAEvidenceRequest, run_qsa_evidence
 from .qsa_grover import QSAGroverPolicy, QSAGroverRequest, run_qsa_grover
+from .qsa_symmetry import QSASymmetryPolicy, QSASymmetryRequest, run_qsa_symmetry
 from .quantum_core import QuantumRequest
 from .quantum_hopper import HopperMesh, QuantumReplayGuard, native_worker, python_worker, qsa_worker
 from .quantum_scenarios import run_quantum_scenarios, summarize_quantum_scenarios
@@ -39,6 +40,14 @@ def _load_grover_request(path: str | Path) -> QSAGroverRequest:
 
 def _load_grover_policy(path: str | Path | None) -> QSAGroverPolicy:
     return QSAGroverPolicy() if path is None else QSAGroverPolicy.from_dict(_load_object(path))
+
+
+def _load_symmetry_request(path: str | Path) -> QSASymmetryRequest:
+    return QSASymmetryRequest.from_dict(_load_object(path))
+
+
+def _load_symmetry_policy(path: str | Path | None) -> QSASymmetryPolicy:
+    return QSASymmetryPolicy() if path is None else QSASymmetryPolicy.from_dict(_load_object(path))
 
 
 def _default_native() -> Path | None:
@@ -106,6 +115,19 @@ def command_qsa_grover(args: argparse.Namespace) -> int:
     return 0 if receipt.accepted else 2
 
 
+def command_qsa_symmetry(args: argparse.Namespace) -> int:
+    request = _load_symmetry_request(args.request)
+    if not args.no_replay_guard:
+        QuantumReplayGuard(args.replay_db).consume(request)
+    receipt = run_qsa_symmetry(
+        request,
+        _load_symmetry_policy(args.policy),
+        timeout_seconds=args.timeout,
+    )
+    print(json.dumps(receipt.to_dict(), indent=2, sort_keys=True))
+    return 0 if receipt.accepted else 2
+
+
 def command_quantum_scenarios(args: argparse.Namespace) -> int:
     native_path = Path(args.native) if args.native else _default_native()
     if native_path is None:
@@ -153,6 +175,17 @@ def register_quantum_subcommands(subparsers: argparse._SubParsersAction) -> None
     grover.add_argument("--replay-db", default="qsec-grover-nonces.sqlite3")
     grover.add_argument("--no-replay-guard", action="store_true")
     grover.set_defaults(function=command_qsa_grover)
+
+    symmetry = quantum_subparsers.add_parser(
+        "qsa-symmetry",
+        help="Run a nonce-bound QSA Hamming-weight symmetry challenge",
+    )
+    symmetry.add_argument("request")
+    symmetry.add_argument("--policy", help="QSA symmetry policy JSON")
+    symmetry.add_argument("--timeout", type=float, default=30.0)
+    symmetry.add_argument("--replay-db", default="qsec-symmetry-nonces.sqlite3")
+    symmetry.add_argument("--no-replay-guard", action="store_true")
+    symmetry.set_defaults(function=command_qsa_symmetry)
 
     scenarios = quantum_subparsers.add_parser(
         "scenarios",
