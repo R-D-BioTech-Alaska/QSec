@@ -62,11 +62,11 @@ QSec 0.3 could use QSA as a third dense-state worker. That was useful for bounde
 
 QSec 0.4 changes that relationship.
 
-When QSA evidence is enabled, QSec launches an isolated QSA worker and records a signed-by-content receipt of what QSA actually used and what state survived execution. The default policy requires QSA 0.2.0 or newer and ABI 1.5.0 or newer.
+When QSA evidence is enabled, QSec launches an isolated QSA worker and records a content-addressed receipt of what QSA actually used and what state survived execution. The default policy requires QSA 0.2.0 or newer and ABI 1.5.0 or newer.
 
 The receipt binds:
 
-- the exact QSec request digest;
+- the exact QSA evidence request digest;
 - QSA package version, native version, and ABI version;
 - logical qubit width and gate count;
 - operation-plan step count after native compilation;
@@ -84,7 +84,7 @@ The receipt binds:
 - the full phase-sensitive state and probability commitments when the request is within the 12-qubit cross-code bound;
 - the final receipt digest and any fail-closed policy failures.
 
-The QSA worker cannot silently return evidence for another request. QSec validates the receipt framing, hashes the complete receipt body, and verifies that its request digest matches the request that was sent.
+The QSA worker cannot silently return evidence for another request. QSec validates the receipt framing, hashes the complete receipt body, and verifies that its request digest matches the evidence request that was sent.
 
 ### Two verification ranges
 
@@ -96,7 +96,7 @@ QSec deliberately separates two different guarantees.
 
 Those are different evidence strengths and are reported as such. The wider route is not presented as independent full-state reconstruction.
 
-### 50-qubit demonstration
+### Measured 50-qubit result
 
 The repository includes a 50-qubit GHZ request:
 
@@ -104,15 +104,35 @@ The repository includes a 50-qubit GHZ request:
 qsec quantum qsa-evidence examples/qsa50_ghz_request.json
 ```
 
-A conventional complex128 statevector for 50 qubits would require:
+The QSec validation workflow installed the pinned QSA 0.2.0 release and executed that command on August 10, 2026. The run passed with this receipt data:
+
+| Evidence | Recorded result |
+| --- | ---: |
+| QSA package / native / ABI | `0.2.0` / `0.2.0` / `1.5.0` |
+| Logical qubits | 50 |
+| Gates / compiled steps | 50 / 50 |
+| Native QSA validation | passed |
+| QSA components | 1 sparse component |
+| Peak nonzero amplitudes | 2 |
+| Estimated QSA state memory | **5,568 bytes** |
+| QSC state packet | **333 bytes** |
+| Dense complex128 equivalent | **18,014,398,509,481,984 bytes (16 PiB)** |
+| Dense-to-QSA state-memory reduction | **3,235,344,559,892x** |
+| Single-qubit marginals | `P(1) = 0.5` for all 50 qubits |
+| QSC round trip | exact and byte-stable |
+| Receipt accepted | yes |
+
+The two GHZ support amplitudes were recorded as approximately `0.7071067812 + 0j`; the other deterministic probe locations were zero. The QSC commitment before and after reconstruction was identical.
+
+The receipt digest for that run is:
 
 ```text
-16 * 2^50 = 18,014,398,509,481,984 bytes = 16 PiB
+af5e0c39d14ef70b64d4b55c40bace31da5dee4d82e493e7d52a176e3414c6f1
 ```
 
-QSec does not claim that QSA used a particular smaller amount until QSA reports it. The evidence receipt records the actual `estimated_bytes`, serialized QSC size, component structure, and measured reduction for the run.
+This is a structured GHZ result, not a claim that arbitrary 50-qubit circuits remain sparse or obtain the same reduction. QSec reports the actual representation and resource evidence for each run.
 
-The GitHub validation workflow installs the pinned QSA 0.2.0 release and runs this 50-qubit evidence command. Its JSON receipt is uploaded as the `qsa-0.2-evidence` workflow artifact.
+The workflow uploads the full JSON receipt as the `qsa-0.2-evidence` artifact.
 
 ## QSec 0.3: Cross-Code Quantum Core
 
